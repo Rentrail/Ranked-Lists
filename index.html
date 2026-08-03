@@ -1,0 +1,2828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ranking List</title>
+<style>
+  :root {
+    --bg: #0f0f13;
+    --surface: #1a1a22;
+    --surface2: #22222e;
+    --border: #2e2e3e;
+    --accent: #7c6af7;
+    --accent-dim: #3d3580;
+    --text: #e8e6f0;
+    --text-dim: #7a7890;
+    --text-muted: #4a4860;
+    --gold: #f0b429;
+    --danger: #e05c5c;
+    --success: #4caf7d;
+    --rank-bg: #13131a;
+    --unranked-bg: #1e1a2e;
+    --font-display: 'Georgia', serif;
+    --font-body: system-ui, -apple-system, sans-serif;
+    --font-mono: 'Courier New', monospace;
+    --radius: 6px;
+    --transition: 0.15s ease;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 14px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    height: 52px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .app-title {
+    font-family: var(--font-display);
+    font-size: 18px;
+    color: var(--text);
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+
+  .app-title span {
+    color: var(--accent);
+  }
+
+  .header-tabs {
+    display: flex;
+    gap: 2px;
+    margin-left: 8px;
+    flex: 1;
+  }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    padding: 6px 14px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 13px;
+    transition: var(--transition);
+    white-space: nowrap;
+  }
+
+  .tab-btn:hover { background: var(--surface2); color: var(--text); }
+  .tab-btn.active { background: var(--accent-dim); color: var(--accent); font-weight: 600; }
+
+  .header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-left: auto;
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 12px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 13px;
+    transition: var(--transition);
+    white-space: nowrap;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { background: #6a59e0; border-color: #6a59e0; color: #fff; }
+  .btn.danger { border-color: var(--danger); color: var(--danger); }
+  .btn.danger:hover { background: var(--danger); color: #fff; }
+  .btn.small { padding: 3px 8px; font-size: 12px; }
+  .btn.icon-btn { padding: 5px 8px; }
+
+  /* ── Layout ── */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    height: calc(100vh - 52px);
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 220px;
+    min-width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: width 0.2s ease, min-width 0.2s ease;
+  }
+
+  .sidebar.collapsed {
+    width: 0;
+    min-width: 0;
+    border-right: none;
+  }
+
+  .sidebar-section {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  .sidebar-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  .list-nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    white-space: nowrap;
+  }
+
+  .sidebar-toggle {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px 6px;
+    border-radius: var(--radius);
+    line-height: 1;
+    transition: var(--transition);
+    flex-shrink: 0;
+  }
+  .sidebar-toggle:hover { color: var(--accent); background: var(--surface2); }
+
+  .list-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    color: var(--text-dim);
+    font-size: 13px;
+    transition: var(--transition);
+    margin-bottom: 2px;
+  }
+
+  .list-nav-item:hover { background: var(--surface2); color: var(--text); }
+  .list-nav-item.active { background: var(--accent-dim); color: var(--accent); }
+
+  .list-nav-item .item-count {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--bg);
+    padding: 1px 6px;
+    border-radius: 10px;
+  }
+
+  /* ── Content ── */
+  .content {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Panel header ── */
+  .panel-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .panel-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    flex: 1;
+  }
+
+  .search-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 5px 10px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    width: 180px;
+    transition: var(--transition);
+  }
+  .search-input:focus { outline: none; border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text-muted); }
+
+  select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 5px 8px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  select:focus { outline: none; border-color: var(--accent); }
+
+  /* ── Scroll area ── */
+  .scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 16px;
+  }
+
+  /* ── Unranked section ── */
+  .unranked-section {
+    margin-bottom: 16px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .section-count {
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--surface2);
+    padding: 1px 6px;
+    border-radius: 10px;
+  }
+
+  /* ── Item rows ── */
+  .item-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 4px;
+    transition: var(--transition);
+    cursor: grab;
+    position: relative;
+  }
+
+  .item-row:hover { border-color: var(--accent-dim); background: var(--surface2); }
+  .item-row.dragging { opacity: 0.4; }
+  .item-row.drag-over { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .item-row.unranked-item { background: var(--unranked-bg); border-color: #2d2845; }
+
+  .rank-badge {
+    width: 36px;
+    min-width: 36px;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .rank-input {
+    width: 52px;
+    min-width: 52px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: var(--transition);
+  }
+  .rank-input:focus { outline: none; border-color: var(--accent); background: var(--surface2); }
+
+  .drag-handle {
+    color: var(--text-muted);
+    cursor: grab;
+    font-size: 14px;
+    padding: 0 2px;
+    user-select: none;
+    touch-action: none;
+  }
+
+  .item-title {
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
+  }
+
+  .item-fields {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .field-chip {
+    font-size: 11px;
+    color: var(--text-dim);
+    background: var(--bg);
+    padding: 2px 7px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  .field-chip.platform { border-color: #3a4060; color: #8899cc; }
+  .field-chip.genre { border-color: #3a5040; color: #88cc99; }
+
+  .item-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: var(--transition);
+  }
+  .item-row:hover .item-actions { opacity: 1; }
+
+  /* ── Bank view ── */
+  .bank-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 4px;
+    transition: var(--transition);
+  }
+  .bank-item:hover { border-color: var(--accent-dim); background: var(--surface2); }
+
+  .bank-item .item-title { font-weight: 600; color: var(--text); flex: 1; }
+
+  .in-list-badge {
+    font-size: 10px;
+    color: var(--success);
+    background: #1a3328;
+    border: 1px solid #2a5040;
+    padding: 1px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+
+  /* ── Modals ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    width: 520px;
+    max-width: 95vw;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  .modal-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 20px;
+  }
+
+  .form-group {
+    margin-bottom: 14px;
+  }
+
+  .form-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .form-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    transition: var(--transition);
+  }
+  .form-input:focus { outline: none; border-color: var(--accent); }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── Field visibility toggles ── */
+  .field-toggle-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .field-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 13px;
+    color: var(--text-dim);
+    user-select: none;
+  }
+  .field-toggle:hover { border-color: var(--accent-dim); }
+  .field-toggle.on { border-color: var(--accent-dim); color: var(--text); }
+  .field-toggle.on::before { content: '✓'; color: var(--accent); font-size: 11px; }
+  .field-toggle:not(.on)::before { content: '○'; color: var(--text-muted); font-size: 11px; }
+
+  .field-chip.tier-tag {
+    font-weight: 700;
+    border-color: transparent;
+  }
+
+  /* ── View toggle ── */
+  .view-toggle { opacity: 0.5; }
+  .view-toggle.active { opacity: 1; border-color: var(--accent); color: var(--accent); }
+
+  /* ── Tier view ── */
+  .tier-row {
+    margin-bottom: 10px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .tier-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.05em;
+    min-height: 42px;
+  }
+
+  .tier-label {
+    min-width: 36px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  .tier-count {
+    font-size: 11px;
+    opacity: 0.7;
+    font-weight: 400;
+    margin-left: auto;
+  }
+
+  .tier-items {
+    background: var(--surface);
+    min-height: 44px;
+    padding: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .tier-items.drag-over-tier {
+    background: var(--surface2);
+    outline: 2px dashed var(--accent);
+    outline-offset: -2px;
+  }
+
+  .tier-chip {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 13px;
+    color: var(--text);
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    touch-action: none;
+    user-select: none;
+    transition: var(--transition);
+  }
+  .tier-chip:hover { border-color: var(--accent-dim); }
+  .tier-chip.dragging { opacity: 0.4; }
+
+  .tier-chip-rank {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+  }
+
+  .tier-untiered .tier-header {
+    background: var(--surface2);
+    color: var(--text-muted);
+  }
+
+  /* ── Tier settings ── */
+  .tier-setting-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tier-color-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    background: transparent;
+  }
+
+  /* ── Pagination bar ── */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 12px 0 4px;
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+  }
+
+  /* ── Bank table ── */
+  .bank-table-wrap {
+    overflow-x: auto;
+    width: 100%;
+  }
+
+  /* Top scrollbar mirror */
+  .bank-table-scroll-top {
+    overflow-x: scroll;
+    overflow-y: hidden;
+    width: 100%;
+    margin-bottom: 2px;
+    /* Force scrollbar visible in Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  /* Force visible height — Firefox needs actual content to show scrollbar */
+  .bank-table-scroll-top-inner {
+    height: 1px;
+    display: block;
+  }
+
+  .bank-table {
+    width: max-content;
+    min-width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .bank-table thead th {
+    background: var(--surface2);
+    color: var(--text-dim);
+    padding: 7px 8px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    position: sticky;
+    top: 0;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+    z-index: 2;
+  }
+
+  .bank-table td {
+    padding: 2px 4px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  .bank-table tr:hover td { background: var(--surface2); }
+
+  .bank-table tfoot tr.new-row td {
+    background: var(--unranked-bg);
+    border-top: 2px solid var(--accent-dim);
+    border-bottom: none;
+  }
+
+  .bank-cell {
+    width: 100%;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text);
+    padding: 5px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: var(--font-body);
+    transition: var(--transition);
+    min-width: 80px;
+  }
+
+  .bank-cell:hover { border-color: var(--border); }
+  .bank-cell:focus { 
+    outline: none; 
+    border-color: var(--accent); 
+    background: var(--surface2); 
+  }
+
+  .new-row-cell { color: var(--text-dim); }
+  .new-row-cell:focus { color: var(--text); }
+
+  /* ── Export modal ── */
+  .export-table-wrap {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: auto;
+    max-height: 300px;
+    margin-bottom: 12px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  th {
+    background: var(--surface2);
+    color: var(--text-dim);
+    padding: 6px 10px;
+    text-align: left;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-size: 10px;
+    position: sticky;
+    top: 0;
+    white-space: nowrap;
+  }
+  td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    white-space: nowrap;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+
+  .export-text {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    white-space: pre;
+    overflow: auto;
+    max-height: 200px;
+    display: none;
+  }
+
+  /* ── Empty states ── */
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-muted);
+  }
+  .empty-state .icon { font-size: 36px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; line-height: 1.5; }
+  .empty-state .hint { font-size: 12px; margin-top: 6px; color: var(--text-muted); }
+
+  /* ── Notifications ── */
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    color: var(--text);
+    padding: 10px 16px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    z-index: 999;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.2s ease;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+  /* ── Settings panel ── */
+  .settings-section { padding: 16px; border-bottom: 1px solid var(--border); }
+  .settings-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
+
+  .rank-number-1 { color: var(--gold); }
+  .rank-number-2 { color: #c0c0d0; }
+  .rank-number-3 { color: #cd7f32; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <button class="sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggleBtn" title="Toggle list panel">☰</button>
+  <div class="app-title">RANK<span>LIST</span></div>
+  <div class="header-tabs">
+    <button class="tab-btn active" onclick="switchTab('ranked')">Ranked List</button>
+    <button class="tab-btn" onclick="switchTab('bank')">Item Bank</button>
+    <button class="tab-btn" onclick="switchTab('settings')">Fields &amp; Settings</button>
+  </div>
+  <div class="header-actions">
+    <button class="btn" onclick="openExport()">Export</button>
+    <button class="btn" onclick="openImport()">Import</button>
+    <button class="btn" onclick="backupData()" title="Download full data backup as JSON">Backup</button>
+    <button class="btn" onclick="openRestore()" title="Restore from a JSON backup file">Restore</button>
+    <button class="btn primary" onclick="openAddItem()">+ Add Item</button>
+  </div>
+</header>
+
+<div class="main">
+  <!-- Sidebar: list selector -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Lists</div>
+      <button class="btn small" style="width:100%" onclick="openNewList()">+ New List</button>
+    </div>
+    <div class="list-nav" id="listNav"></div>
+  </div>
+
+  <!-- Main content -->
+  <div class="content">
+
+    <!-- RANKED TAB -->
+    <div id="tab-ranked">
+      <div class="panel-header">
+        <div class="panel-title" id="rankedPanelTitle">Ranked</div>
+        <div class="filter-row">
+          <input class="search-input" type="text" placeholder="Search…" oninput="filterRanked(this.value)" id="rankSearch">
+          <select id="rankFilterField" onchange="filterRanked(document.getElementById('rankSearch').value)">
+            <option value="">All</option>
+          </select>
+          <select id="rankFilterValue" onchange="filterRanked(document.getElementById('rankSearch').value)">
+            <option value="">Any</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button class="btn small view-toggle active" id="viewRankedBtn" onclick="setRankedView('ranked')">Ranked</button>
+          <button class="btn small view-toggle" id="viewTierBtn" onclick="setRankedView('tier')">Tier</button>
+          <button class="btn small" onclick="openAddFromBank()">+ From Bank</button>
+        </div>
+      </div>
+      <!-- Ranked view -->
+      <div class="scroll-area" id="rankedScroll">
+        <div class="unranked-section" id="unrankedSection">
+          <div class="section-header">
+            <span class="section-title">Unranked</span>
+            <span class="section-count" id="unrankedCount">0</span>
+          </div>
+          <div id="unrankedList"></div>
+        </div>
+        <div class="section-header">
+          <span class="section-title">Ranked</span>
+          <span class="section-count" id="rankedCount">0</span>
+        </div>
+        <div id="rankedList"></div>
+        <div class="empty-state" id="rankedEmpty" style="display:none">
+          <div class="icon">🏆</div>
+          <p>No items ranked yet.</p>
+          <div class="hint">Add items from the bank or use "+ Add Item" to get started.</div>
+        </div>
+      </div>
+      <!-- Tier view -->
+      <div class="scroll-area" id="tierScroll" style="display:none">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+          <button class="btn small primary" onclick="autoAssignTiers()">Auto-Assign Tiers</button>
+          <button class="btn small" onclick="openTierSettings()">Edit Tiers</button>
+          <span style="font-size:12px;color:var(--text-muted)">Drag items between tiers to reassign</span>
+        </div>
+        <div id="tierList"></div>
+      </div>
+    </div>
+
+    <!-- BANK TAB -->
+    <div id="tab-bank" style="display:none; flex:1; display:none; flex-direction:column;">
+      <div class="panel-header">
+        <div class="panel-title" id="bankPanelTitle">Item Bank</div>
+        <div class="filter-row">
+          <input class="search-input" type="text" placeholder="Search bank…" oninput="bankSearchInput(this.value)" id="bankSearch">
+          <select id="bankFilterField" onchange="bankFilterChange()">
+            <option value="">All</option>
+          </select>
+          <select id="bankFilterValue" onchange="bankFilterChange()">
+            <option value="">Any</option>
+          </select>
+          <select id="bankPageSize" onchange="bankPageSizeChange(this.value)">
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100" selected>100</option>
+          </select>
+        </div>
+        <button class="btn small" onclick="focusNewBankRow()">+ New Row</button>
+      </div>
+      <div class="scroll-area" id="bankScroll">
+        <div class="pagination-bar" id="bankPaginationTop" style="display:none">
+          <button class="btn small" id="bankPrevBtnTop" onclick="bankChangePage(-1)">← Prev</button>
+          <span id="bankPageInfoTop" style="font-size:12px;color:var(--text-dim)"></span>
+          <button class="btn small" id="bankNextBtnTop" onclick="bankChangePage(1)">Next →</button>
+        </div>
+        <div id="bankList"></div>
+        <div class="empty-state" id="bankEmpty" style="display:none">
+          <div class="icon">📦</div>
+          <p>Your bank is empty.</p>
+          <div class="hint">Add items with "+ Add Item" above.</div>
+        </div>
+        <div class="pagination-bar" id="bankPagination" style="display:none">
+          <button class="btn small" id="bankPrevBtn" onclick="bankChangePage(-1)">← Prev</button>
+          <span id="bankPageInfo" style="font-size:12px;color:var(--text-dim)"></span>
+          <button class="btn small" id="bankNextBtn" onclick="bankChangePage(1)">Next →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div id="tab-settings" style="display:none; flex:1; flex-direction:column; overflow-y:auto;">
+      <div class="settings-section">
+        <div class="settings-title">Visible Fields — <span id="settingsListName">—</span></div>
+        <p style="font-size:12px; color:var(--text-dim); margin-bottom:12px;">Toggle which fields appear in the list view and export. Data is always preserved.</p>
+        <div class="field-toggle-grid" id="fieldToggles"></div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title">Tiers</div>
+        <p style="font-size:12px; color:var(--text-dim); margin-bottom:12px;">Edit tier names and colours. Drag to reorder.</p>
+        <div id="tierSettingsList"></div>
+        <button class="btn small" style="margin-top:10px" onclick="addTier()">+ Add Tier</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════ MODALS ══════════════════ -->
+
+<!-- Add / Edit Item -->
+<div class="modal-overlay" id="modalItem">
+  <div class="modal">
+    <div class="modal-title" id="modalItemTitle">Add Item to Bank</div>
+    <div id="itemFormFields"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modalItem')">Cancel</button>
+      <button class="btn primary" onclick="saveItem()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add from Bank -->
+<div class="modal-overlay" id="modalFromBank">
+  <div class="modal">
+    <div class="modal-title">Add from Bank</div>
+    <input class="form-input" type="text" placeholder="Search bank…" oninput="filterBankModal(this.value)" id="bankModalSearch" style="margin-bottom:12px;">
+    <div id="bankModalList" style="max-height:360px; overflow-y:auto;"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modalFromBank')">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- New List -->
+<div class="modal-overlay" id="modalNewList">
+  <div class="modal">
+    <div class="modal-title">New List</div>
+    <div class="form-group">
+      <label class="form-label">List Name</label>
+      <input class="form-input" type="text" id="newListName" placeholder="e.g. Video Games">
+    </div>
+    <p style="font-size:12px;color:var(--text-dim);margin-top:4px;">All new lists start with the Video Games field set. You can hide fields you don't need in Fields &amp; Settings.</p>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modalNewList')">Cancel</button>
+      <button class="btn primary" onclick="createList()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Export -->
+<div class="modal-overlay" id="modalExport">
+  <div class="modal" style="width:700px">
+    <div class="modal-title">Export</div>
+    <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+      <select id="exportListSelect" onchange="buildExport()" style="flex:1;font-weight:600;">
+      </select>
+      <select id="exportFilterField" onchange="buildExport()" style="flex:1">
+        <option value="">All fields</option>
+      </select>
+      <select id="exportFilterValue" onchange="buildExport()" style="flex:1">
+        <option value="">Any</option>
+      </select>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-dim);cursor:pointer;">
+        <input type="checkbox" id="exportRankedOnly" onchange="buildExport()" checked> Ranked only
+      </label>
+    </div>
+    <div class="export-table-wrap">
+      <table id="exportTable"><thead></thead><tbody></tbody></table>
+    </div>
+    <div class="export-text" id="exportText"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="toggleExportRaw()">Toggle Raw Text</button>
+      <button class="btn" onclick="closeModal('modalExport')">Close</button>
+      <button class="btn primary" onclick="copyExport()">Copy to Clipboard</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Item -->
+<div class="modal-overlay" id="modalEdit">
+  <div class="modal">
+    <div class="modal-title">Edit Item</div>
+    <div id="editFormFields"></div>
+    <div class="modal-actions">
+      <button class="btn danger" onclick="deleteItemFromEdit()">Delete</button>
+      <button class="btn" onclick="closeModal('modalEdit')">Cancel</button>
+      <button class="btn primary" onclick="saveEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import -->
+<div class="modal-overlay" id="modalImport">
+  <div class="modal" style="width:760px">
+    <div class="modal-title">Import from Spreadsheet</div>
+    <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Copy your data from Google Sheets or Excel and paste it below. Include the header row.</p>
+
+    <!-- Step 1: Paste -->
+    <div id="importStep1">
+      <textarea id="importPasteArea" class="form-input"
+        style="width:100%;height:160px;font-family:var(--font-mono);font-size:12px;resize:vertical;"
+        placeholder="Paste your spreadsheet data here…"
+        oninput="importParsePaste()"></textarea>
+      <div id="importPasteHint" style="font-size:12px;color:var(--text-muted);margin-top:6px;"></div>
+    </div>
+
+    <!-- Step 2: Map columns -->
+    <div id="importStep2" style="display:none">
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;">
+        Map your columns to fields. Columns set to <em>Skip</em> will be ignored.
+      </div>
+      <div id="importColumnMap" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;"></div>
+      <div class="export-table-wrap" style="max-height:220px;">
+        <table id="importPreviewTable"><thead></thead><tbody></tbody></table>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:6px;" id="importRowCount"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modalImport');resetImport()">Cancel</button>
+      <button class="btn primary" id="importConfirmBtn" style="display:none" onclick="confirmImport()">Import Items</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tier Settings -->
+<div class="modal-overlay" id="modalTierSettings">
+  <div class="modal" style="width:480px">
+    <div class="modal-title">Edit Tiers</div>
+    <p style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">Edit names and colours. Changes apply immediately.</p>
+    <div id="modalTierList"></div>
+    <button class="btn small" style="margin-top:10px" onclick="addTier()">+ Add Tier</button>
+    <div class="modal-actions">
+      <button class="btn primary" onclick="closeModal('modalTierSettings');renderTierView()">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Restore -->
+<div class="modal-overlay" id="modalRestore">
+  <div class="modal">
+    <div class="modal-title">Restore from Backup</div>
+    <p style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">
+      Select a JSON backup file. This will <strong style="color:var(--danger)">replace all current data</strong> with the backup contents.
+    </p>
+    <div id="restoreStatus" style="font-size:13px;color:var(--text-dim);margin-bottom:12px;"></div>
+    <input type="file" id="restoreFileInput" accept=".json" onchange="restoreFileSelected(this)"
+      style="color:var(--text);font-size:13px;">
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modalRestore')">Cancel</button>
+      <button class="btn primary danger" id="restoreConfirmBtn" style="display:none" onclick="confirmRestore()">Replace All Data</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+//  DATA SCHEMA
+// ══════════════════════════════════════════════
+
+const FIELDS = [
+  { key: 'title',          label: 'Title',          type: 'text',   required: true },
+  { key: 'platform',       label: 'Platform',       type: 'text' },
+  { key: 'genre',          label: 'Genre',          type: 'text' },
+  { key: 'subGenre',       label: 'Sub-Genre',      type: 'text' },
+  { key: 'series',         label: 'Series',         type: 'text' },
+  { key: 'developer',      label: 'Developer',      type: 'text' },
+  { key: 'publisher',      label: 'Publisher',      type: 'text' },
+  { key: 'releaseMonth',   label: 'Release Month',  type: 'text' },
+  { key: 'releaseYear',    label: 'Release Year',   type: 'number' },
+];
+
+const DEFAULT_VISIBLE = ['title','platform','genre','releaseYear'];
+
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+
+let db;
+let state = {
+  lists: [],          // { id, name, visibleFields: [] }
+  items: [],          // { id, listId, ...fields }
+  ranked: [],         // { id, itemId, listId, rank: null|number }
+  activeListId: null,
+  activeTab: 'ranked',
+};
+
+let dragSrcId = null;
+let editingItemId = null;
+let editingRankedId = null;
+
+// ══════════════════════════════════════════════
+//  INDEXEDDB
+// ══════════════════════════════════════════════
+
+function initDB() {
+  const req = indexedDB.open('RankList', 2);
+  req.onupgradeneeded = e => {
+    const d = e.target.result;
+    if (!d.objectStoreNames.contains('lists'))  d.createObjectStore('lists',  { keyPath: 'id' });
+    if (!d.objectStoreNames.contains('items'))  d.createObjectStore('items',  { keyPath: 'id' });
+    if (!d.objectStoreNames.contains('ranked')) d.createObjectStore('ranked', { keyPath: 'id' });
+  };
+  req.onsuccess = e => {
+    db = e.target.result;
+    loadAll();
+  };
+  req.onerror = () => console.error('IndexedDB error');
+}
+
+function dbGetAll(store) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).getAll();
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+  });
+}
+
+function dbPut(store, obj) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).put(obj);
+    req.onsuccess = () => res();
+    req.onerror = () => rej(req.error);
+  });
+}
+
+function dbDelete(store, id) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).delete(id);
+    req.onsuccess = () => res();
+    req.onerror = () => rej(req.error);
+  });
+}
+
+async function loadAll() {
+  state.lists  = await dbGetAll('lists');
+  state.items  = await dbGetAll('items');
+  state.ranked = await dbGetAll('ranked');
+
+  // Seed default list if none
+  if (state.lists.length === 0) {
+    const defaultList = { id: uid(), name: 'Video Games', visibleFields: [...DEFAULT_VISIBLE] };
+    await dbPut('lists', defaultList);
+    state.lists = [defaultList];
+  }
+
+  state.activeListId = state.lists[0].id;
+  render();
+}
+
+// ══════════════════════════════════════════════
+//  UTILITIES
+// ══════════════════════════════════════════════
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+
+// ══════════════════════════════════════════════
+//  GETTERS
+// ══════════════════════════════════════════════
+
+function activeList() {
+  return state.lists.find(l => l.id === state.activeListId);
+}
+
+function itemsForList(listId) {
+  // Bank is universal — all items available to all lists
+  // listId param kept for API compatibility but ignored
+  return state.items;
+}
+
+function rankedForList(listId) {
+  return state.ranked.filter(r => r.listId === listId);
+}
+
+function visibleFields() {
+  const list = activeList();
+  if (!list) return FIELDS.filter(f => DEFAULT_VISIBLE.includes(f.key));
+  return FIELDS.filter(f => list.visibleFields.includes(f.key));
+}
+
+// ══════════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════════
+
+function render() {
+  renderSidebar();
+  renderActiveTab();
+}
+
+function renderSidebar() {
+  const nav = document.getElementById('listNav');
+  nav.innerHTML = state.lists.map(l => {
+    const count = rankedForList(l.id).filter(r => r.rank !== null).length;
+    return `<div class="list-nav-item ${l.id === state.activeListId ? 'active' : ''}" 
+                 onclick="selectList('${l.id}')">
+      ${esc(l.name)}
+      <span class="item-count">${count}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderActiveTab() {
+  const tab = state.activeTab;
+  if (tab === 'ranked') renderRanked();
+  else if (tab === 'bank') renderBank();
+  else if (tab === 'settings') renderSettings();
+  updateFilterDropdowns();
+}
+
+function renderRanked(searchVal = '', filterField = '', filterVal = '') {
+  const list = activeList();
+  if (!list) return;
+
+  document.getElementById('rankedPanelTitle').textContent = list.name;
+
+  const vf = visibleFields().filter(f => f.key !== 'title');
+  const allRanked = rankedForList(list.id);
+  const items = itemsForList(list.id);
+
+  const getItem = id => items.find(i => i.id === id);
+
+  // Filter
+  let filtered = allRanked.filter(r => {
+    const item = getItem(r.itemId);
+    if (!item) return false;
+    const matchSearch = !searchVal || item.title.toLowerCase().includes(searchVal.toLowerCase()) ||
+      FIELDS.some(f => String(item[f.key] || '').toLowerCase().includes(searchVal.toLowerCase()));
+    const matchFilter = !filterField || !filterVal || String(item[filterField] || '') === filterVal;
+    return matchSearch && matchFilter;
+  });
+
+  const unranked = filtered.filter(r => r.rank === null);
+  const ranked = filtered.filter(r => r.rank !== null).sort((a,b) => a.rank - b.rank);
+
+  // Unranked
+  document.getElementById('unrankedCount').textContent = unranked.length;
+  document.getElementById('unrankedList').innerHTML = unranked.map(r => {
+    const item = getItem(r.itemId);
+    if (!item) return '';
+    return renderItemRow(item, r, true, vf);
+  }).join('');
+
+  // Ranked
+  document.getElementById('rankedCount').textContent = ranked.length;
+  document.getElementById('rankedList').innerHTML = ranked.map(r => {
+    const item = getItem(r.itemId);
+    if (!item) return '';
+    return renderItemRow(item, r, false, vf);
+  }).join('');
+
+  document.getElementById('rankedEmpty').style.display =
+    (ranked.length === 0 && unranked.length === 0) ? 'block' : 'none';
+
+  attachDragListeners();
+}
+
+function renderItemRow(item, ranked, isUnranked, vf) {
+  const rankNum = ranked.rank;
+  const rankClass = rankNum === 1 ? 'rank-number-1' : rankNum === 2 ? 'rank-number-2' : rankNum === 3 ? 'rank-number-3' : '';
+
+  const chips = vf.map(f => {
+    const val = item[f.key];
+    if (!val) return '';
+    const cls = f.key === 'platform' ? 'platform' : f.key === 'genre' ? 'genre' : '';
+    return `<span class="field-chip ${cls}">${esc(val)}</span>`;
+  }).join('');
+
+  // Tier tag
+  const assignments = getTierAssignments();
+  const tiers = getTiers();
+  const tierTag = (() => {
+    const tierId = assignments[item.id];
+    if (!tierId) return '';
+    const tier = tiers.find(t => t.id === tierId);
+    if (!tier) return '';
+    return `<span class="field-chip tier-tag" style="color:${tier.color};background:${tier.color}22;border-color:${tier.color}44">Tier: ${esc(tier.label)}</span>`;
+  })();
+
+  const rankDisplay = isUnranked
+    ? `<span class="rank-badge" style="color:var(--text-muted)">—</span>`
+    : `<input class="rank-input ${rankClass}" type="number" min="1" value="${rankNum}"
+         onchange="setRank('${ranked.id}', this.value)"
+         onclick="this.select()"
+         title="Type a rank number">`;
+
+  return `<div class="item-row ${isUnranked ? 'unranked-item' : ''}"
+               id="row-${ranked.id}"
+               data-ranked-id="${ranked.id}">
+    <span class="drag-handle" title="Drag to reorder" data-drag-handle="true">⠿</span>
+    ${rankDisplay}
+    <div class="item-fields"><span class="item-title">${esc(item.title)}</span>${chips}${tierTag}</div>
+    <div class="item-actions">
+      ${isUnranked ? `<button class="btn small" onclick="promoteToRanked('${ranked.id}')">Rank</button>` : ''}
+      <button class="btn small" onclick="openEditItem('${item.id}')">Edit</button>
+      <button class="btn small danger" onclick="removeFromList('${ranked.id}')">✕</button>
+    </div>
+  </div>`;
+}
+
+// Bank pagination state
+let bankPage = 0;
+let bankPageSize = 100;
+let bankFiltered = [];
+
+function bankSearchInput(val) {
+  bankPage = 0;
+  filterBank(val);
+}
+
+function bankFilterChange() {
+  bankPage = 0;
+  filterBank(document.getElementById('bankSearch').value);
+}
+
+function bankPageSizeChange(val) {
+  bankPageSize = parseInt(val);
+  bankPage = 0;
+  filterBank(document.getElementById('bankSearch').value);
+}
+
+function bankChangePage(dir) {
+  const totalPages = Math.ceil(bankFiltered.length / bankPageSize);
+  bankPage = Math.max(0, Math.min(bankPage + dir, totalPages - 1));
+  renderBankPage();
+}
+
+function filterBank(searchVal = '') {
+  const filterField = document.getElementById('bankFilterField').value;
+  const filterVal   = document.getElementById('bankFilterValue').value;
+  const items = state.items; // universal bank
+
+  bankFiltered = items.filter(item => {
+    const matchSearch = !searchVal || FIELDS.some(f => String(item[f.key]||'').toLowerCase().includes(searchVal.toLowerCase()));
+    const matchFilter = !filterField || !filterVal || String(item[filterField]||'') === filterVal;
+    return matchSearch && matchFilter;
+  });
+
+  bankFiltered.sort((a,b) => (a.title||'').localeCompare(b.title||''));
+  renderBankPage();
+}
+
+function renderBank(searchVal = '', filterField = '', filterVal = '') {
+  filterBank(searchVal || document.getElementById('bankSearch')?.value || '');
+}
+
+function renderBankPage() {
+  const list = activeList();
+  if (!list) return;
+
+  document.getElementById('bankPanelTitle').textContent = 'Item Bank (' + bankFiltered.length + ')';
+
+  // Only track ranked status for the currently active list
+  const rankedIds = new Set(rankedForList(list.id).map(r => r.itemId));
+
+  const totalPages = Math.max(1, Math.ceil(bankFiltered.length / bankPageSize));
+  if (bankPage >= totalPages) bankPage = totalPages - 1;
+
+  const pageItems = bankFiltered.slice(bankPage * bankPageSize, (bankPage + 1) * bankPageSize);
+
+  const colHeaders = FIELDS.map(f =>
+    `<th style="min-width:${f.key==='title'?260:120}px">${esc(f.label)}</th>`
+  ).join('') + `<th style="width:110px">${esc(list.name)}</th><th style="width:60px"></th>`;
+
+  const rows = pageItems.map(item => {
+    const inList = rankedIds.has(item.id);
+    const cells = FIELDS.map(f => {
+      const val = esc(item[f.key] || '');
+      return `<td>
+        <input class="bank-cell"
+               data-item-id="${item.id}"
+               data-field="${f.key}"
+               value="${val}"
+               placeholder="${esc(f.label)}"
+               type="${f.type === 'number' ? 'number' : 'text'}"
+               onblur="bankCellSave(this)"
+               onkeydown="bankCellKeydown(event, this)">
+      </td>`;
+    }).join('');
+
+    return `<tr id="bank-row-${item.id}">
+      ${cells}
+      <td style="text-align:center">
+        ${inList
+          ? '<span class="in-list-badge">✓ In List</span>'
+          : `<button class="btn small" onclick="addToRankedFromBank('${item.id}')">+ List</button>`}
+      </td>
+      <td>
+        <button class="btn small danger" onclick="deleteItem('${item.id}')" title="Delete">&#x2715;</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  const newCells = FIELDS.map(f =>
+    `<td><input class="bank-cell new-row-cell" data-field="${f.key}"
+               placeholder="${esc(f.label)}"
+               type="${f.type === 'number' ? 'number' : 'text'}"
+               onkeydown="bankNewRowKeydown(event, this)"
+               onblur="bankNewRowBlur()"></td>`
+  ).join('');
+
+  const tableHtml = `
+    <div class="bank-table-scroll-top" id="bankScrollTop">
+      <div class="bank-table-scroll-top-inner" id="bankScrollTopInner"></div>
+    </div>
+    <div class="bank-table-wrap" id="bankTableWrap">
+      <table class="bank-table">
+        <thead><tr>${colHeaders}</tr></thead>
+        <tbody id="bankTableBody">${rows}</tbody>
+        <tfoot>
+          <tr id="bank-new-row" class="new-row">
+            ${newCells}
+            <td></td><td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>`;
+
+  document.getElementById('bankList').innerHTML = tableHtml;
+  document.getElementById('bankEmpty').style.display = bankFiltered.length === 0 ? 'block' : 'none';
+
+  // Sync top scrollbar with table scroll
+  const wrap = document.getElementById('bankTableWrap');
+  const topBar = document.getElementById('bankScrollTop');
+  const topInner = document.getElementById('bankScrollTopInner');
+  if (wrap && topBar && topInner) {
+    setTimeout(() => {
+      const tableEl = wrap.querySelector('.bank-table');
+      const tableWidth = tableEl ? tableEl.offsetWidth : wrap.scrollWidth;
+      topInner.style.width = tableWidth + 'px';
+    }, 50);
+
+    let syncingFromTop = false;
+    let syncingFromWrap = false;
+
+    topBar.addEventListener('scroll', () => {
+      if (syncingFromWrap) return;
+      syncingFromTop = true;
+      wrap.scrollLeft = topBar.scrollLeft;
+      syncingFromTop = false;
+    });
+
+    wrap.addEventListener('scroll', () => {
+      if (syncingFromTop) return;
+      syncingFromWrap = true;
+      topBar.scrollLeft = wrap.scrollLeft;
+      syncingFromWrap = false;
+    });
+  }
+  document.getElementById('bankEmpty').style.display = bankFiltered.length === 0 ? 'block' : 'none';
+
+  // Pagination controls
+  const pagination = document.getElementById('bankPagination');
+  const paginationTop = document.getElementById('bankPaginationTop');
+  if (totalPages <= 1) {
+    pagination.style.display = 'none';
+    paginationTop.style.display = 'none';
+  } else {
+    const start = bankPage * bankPageSize + 1;
+    const end = Math.min((bankPage + 1) * bankPageSize, bankFiltered.length);
+    const infoText = `${start}–${end} of ${bankFiltered.length}  |  Page ${bankPage + 1} of ${totalPages}`;
+    const prevDisabled = bankPage === 0;
+    const nextDisabled = bankPage >= totalPages - 1;
+
+    pagination.style.display = 'flex';
+    document.getElementById('bankPageInfo').textContent = infoText;
+    document.getElementById('bankPrevBtn').disabled = prevDisabled;
+    document.getElementById('bankNextBtn').disabled = nextDisabled;
+
+    paginationTop.style.display = 'flex';
+    document.getElementById('bankPageInfoTop').textContent = infoText;
+    document.getElementById('bankPrevBtnTop').disabled = prevDisabled;
+    document.getElementById('bankNextBtnTop').disabled = nextDisabled;
+  }
+}
+
+
+async function bankCellSave(input) {
+  const itemId = input.dataset.itemId;
+  const field  = input.dataset.field;
+  const value  = input.value.trim();
+  const item   = state.items.find(i => i.id === itemId);
+  if (!item) return;
+  if (String(item[field]||'') === value) return;
+  item[field] = value;
+  await dbPut('items', item);
+  updateFilterDropdowns();
+}
+
+function bankCellKeydown(e, input) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const td = input.closest('td');
+    const tr = td.closest('tr');
+    const nextTr = tr.nextElementSibling;
+    if (nextTr) {
+      const idx = [...tr.querySelectorAll('td')].indexOf(td);
+      nextTr.querySelectorAll('.bank-cell')[idx]?.focus();
+    }
+  }
+  if (e.key === 'Escape') input.blur();
+}
+
+let newRowTimer = null;
+
+function bankNewRowKeydown(e, input) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    commitNewRow();
+  }
+}
+
+function bankNewRowBlur() {
+  clearTimeout(newRowTimer);
+  newRowTimer = setTimeout(() => {
+    const focused = document.activeElement;
+    if (focused && focused.classList.contains('new-row-cell')) return;
+    commitNewRow();
+  }, 150);
+}
+
+function focusNewBankRow() {
+  const first = document.querySelector('.new-row-cell');
+  if (first) { first.focus(); first.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+}
+
+async function commitNewRow() {
+  const cells = document.querySelectorAll('.new-row-cell');
+  const titleInput = [...cells].find(c => c.dataset.field === 'title');
+  if (!titleInput || !titleInput.value.trim()) return;
+
+  const item = { id: uid(), listId: state.activeListId };
+  cells.forEach(c => { item[c.dataset.field] = c.value.trim(); });
+
+  await dbPut('items', item);
+  state.items.push(item);
+  toast('Item added');
+  bankFiltered = [];
+  bankPage = 0;
+  filterBank(document.getElementById('bankSearch').value);
+  setTimeout(() => document.querySelector('.new-row-cell')?.focus(), 50);
+}
+
+// ══════════════════════════════════════════════
+//  FILTER DROPDOWNS
+// ══════════════════════════════════════════════
+
+function updateFilterDropdowns() {
+  const list = activeList();
+  if (!list) return;
+  const items = state.items; // universal bank — all items
+  const vf = visibleFields().filter(f => f.key !== 'title');
+
+  ['rankFilterField','bankFilterField','exportFilterField'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = `<option value="">All fields</option>` +
+      vf.map(f => `<option value="${f.key}" ${cur===f.key?'selected':''}>${esc(f.label)}</option>`).join('');
+  });
+
+  updateValueDropdown('rankFilterField', 'rankFilterValue', items);
+  updateValueDropdown('bankFilterField', 'bankFilterValue', items);
+  updateValueDropdown('exportFilterField', 'exportFilterValue', items);
+}
+
+function updateValueDropdown(fieldSelId, valueSelId, items) {
+  const fieldSel = document.getElementById(fieldSelId);
+  const valueSel = document.getElementById(valueSelId);
+  if (!fieldSel || !valueSel) return;
+  const field = fieldSel.value;
+  if (!field) { valueSel.innerHTML = '<option value="">Any</option>'; return; }
+  const vals = [...new Set(items.map(i => i[field]).filter(Boolean))].sort();
+  valueSel.innerHTML = '<option value="">Any</option>' + vals.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
+}
+
+// ══════════════════════════════════════════════
+//  TABS & NAV
+// ══════════════════════════════════════════════
+
+function switchTab(tab) {
+  state.activeTab = tab;
+  ['ranked','bank','settings'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === tab ? 'flex' : 'none';
+    document.querySelector(`.tab-btn[onclick="switchTab('${t}')"]`).classList.toggle('active', t === tab);
+  });
+  // Fix flex direction for tabs that need column
+  if (tab === 'ranked' || tab === 'bank') {
+    document.getElementById('tab-' + tab).style.flexDirection = 'column';
+  }
+  renderActiveTab();
+}
+
+function selectList(id) {
+  state.activeListId = id;
+  render();
+}
+
+// ══════════════════════════════════════════════
+//  ADD ITEM
+// ══════════════════════════════════════════════
+
+function openAddItem() {
+  editingItemId = null;
+  document.getElementById('modalItemTitle').textContent = 'Add Item to Bank';
+  buildItemForm('itemFormFields', null);
+  openModal('modalItem');
+  setTimeout(() => document.querySelector('#itemFormFields input')?.focus(), 50);
+}
+
+function buildItemForm(containerId, item) {
+  const html = FIELDS.map(f => `
+    <div class="form-group ${f.key === 'title' || f.key === 'platform' || f.key === 'genre' ? '' : ''}">
+      <label class="form-label">${esc(f.label)}${f.required ? ' *' : ''}</label>
+      <input class="form-input" type="${f.type === 'number' ? 'number' : 'text'}"
+             id="field_${f.key}"
+             value="${esc(item ? (item[f.key]||'') : '')}"
+             placeholder="${esc(f.label)}"
+             ${f.required ? 'required' : ''}>
+    </div>
+  `).join('');
+  document.getElementById(containerId).innerHTML = html;
+}
+
+async function saveItem() {
+  const title = document.getElementById('field_title').value.trim();
+  if (!title) { toast('Title is required'); return; }
+
+  const item = { id: editingItemId || uid(), listId: state.activeListId };
+  FIELDS.forEach(f => { item[f.key] = document.getElementById('field_' + f.key).value.trim(); });
+
+  await dbPut('items', item);
+  if (editingItemId) {
+    const idx = state.items.findIndex(i => i.id === editingItemId);
+    if (idx >= 0) state.items[idx] = item; else state.items.push(item);
+  } else {
+    state.items.push(item);
+  }
+
+  closeModal('modalItem');
+  toast(editingItemId ? 'Item updated' : 'Item added to bank');
+  editingItemId = null;
+  render();
+}
+
+// ══════════════════════════════════════════════
+//  EDIT ITEM
+// ══════════════════════════════════════════════
+
+function openEditItem(itemId) {
+  const item = state.items.find(i => i.id === itemId);
+  if (!item) return;
+  editingItemId = itemId;
+  buildItemForm('editFormFields', item);
+  openModal('modalEdit');
+}
+
+async function saveEdit() {
+  const title = document.getElementById('field_title') ? document.getElementById('field_title').value.trim() : '';
+  // Use edit form fields
+  const item = state.items.find(i => i.id === editingItemId);
+  if (!item) return;
+  FIELDS.forEach(f => {
+    const el = document.getElementById('field_' + f.key);
+    if (el) item[f.key] = el.value.trim();
+  });
+  await dbPut('items', item);
+  closeModal('modalEdit');
+  toast('Item updated');
+  editingItemId = null;
+  render();
+}
+
+async function deleteItemFromEdit() {
+  if (!editingItemId) return;
+  await deleteItem(editingItemId);
+  closeModal('modalEdit');
+}
+
+async function deleteItem(itemId) {
+  // Check which lists this item appears in
+  const inRanked = state.ranked.filter(r => r.itemId === itemId);
+  if (inRanked.length > 0) {
+    const listNames = inRanked.map(r => {
+      const list = state.lists.find(l => l.id === r.listId);
+      return list ? list.name : 'Unknown';
+    });
+    const unique = [...new Set(listNames)];
+    const msg = `This item is in ${unique.length === 1 ? 'the list' : 'these lists'}: ${unique.join(', ')}.\n\nDelete it from the bank and all lists?`;
+    if (!confirm(msg)) return;
+  } else {
+    if (!confirm('Delete this item from the bank?')) return;
+  }
+
+  await dbDelete('items', itemId);
+  state.items = state.items.filter(i => i.id !== itemId);
+  const toRemove = state.ranked.filter(r => r.itemId === itemId);
+  for (const r of toRemove) { await dbDelete('ranked', r.id); }
+  state.ranked = state.ranked.filter(r => r.itemId !== itemId);
+  toast('Item deleted');
+  if (state.activeTab === 'bank') {
+    filterBank(document.getElementById('bankSearch')?.value || '');
+  } else {
+    render();
+  }
+}
+
+// ══════════════════════════════════════════════
+//  RANKED LIST OPERATIONS
+// ══════════════════════════════════════════════
+
+async function addToRankedFromBank(itemId) {
+  const already = state.ranked.find(r => r.itemId === itemId && r.listId === state.activeListId);
+  if (already) { toast('Already in list'); return; }
+  const entry = { id: uid(), itemId, listId: state.activeListId, rank: null };
+  await dbPut('ranked', entry);
+  state.ranked.push(entry);
+  toast('Added to list (unranked)');
+  // Re-render modal immediately so button updates to "In list"
+  const modalOpen = document.getElementById('modalFromBank').classList.contains('open');
+  if (modalOpen) {
+    renderBankModal(document.getElementById('bankModalSearch').value);
+  } else {
+    render();
+  }
+}
+
+async function removeFromList(rankedId) {
+  await dbDelete('ranked', rankedId);
+  state.ranked = state.ranked.filter(r => r.id !== rankedId);
+  await resequence();
+  render();
+}
+
+async function promoteToRanked(rankedId) {
+  const entry = state.ranked.find(r => r.id === rankedId);
+  if (!entry) return;
+  const maxRank = getMaxRank();
+  entry.rank = maxRank + 1;
+  await dbPut('ranked', entry);
+  await resequence();
+  render();
+}
+
+function getMaxRank() {
+  const ranked = rankedForList(state.activeListId).filter(r => r.rank !== null);
+  if (ranked.length === 0) return 0;
+  return Math.max(...ranked.map(r => r.rank));
+}
+
+async function setRank(rankedId, value) {
+  const entry = state.ranked.find(r => r.id === rankedId);
+  if (!entry) return;
+  let newRank = parseInt(value, 10);
+  if (isNaN(newRank) || newRank < 1) newRank = 1;
+
+  const maxRank = getMaxRank();
+  if (newRank > maxRank) newRank = maxRank;
+
+  // Shift others to make room
+  const others = rankedForList(state.activeListId)
+    .filter(r => r.rank !== null && r.id !== rankedId)
+    .sort((a,b) => a.rank - b.rank);
+
+  // Remove entry from current position, insert at newRank
+  entry.rank = newRank;
+
+  // Resequence all
+  const oldRank = entry.rank;
+  const sorted = rankedForList(state.activeListId)
+    .filter(r => r.rank !== null)
+    .sort((a,b) => {
+      if (a.id === rankedId) return -1;
+      if (b.id === rankedId) return 1;
+      return a.rank - b.rank;
+    });
+
+  // Assign positions, pushing the entry to its new spot
+  let seq = [...rankedForList(state.activeListId).filter(r => r.rank !== null).sort((a,b) => a.rank - b.rank)];
+  // Remove the entry
+  seq = seq.filter(r => r.id !== rankedId);
+  // Insert at newRank - 1
+  seq.splice(newRank - 1, 0, entry);
+  for (let i = 0; i < seq.length; i++) {
+    seq[i].rank = i + 1;
+    await dbPut('ranked', seq[i]);
+  }
+
+  render();
+}
+
+async function resequence() {
+  const ranked = rankedForList(state.activeListId)
+    .filter(r => r.rank !== null)
+    .sort((a,b) => a.rank - b.rank);
+  for (let i = 0; i < ranked.length; i++) {
+    if (ranked[i].rank !== i + 1) {
+      ranked[i].rank = i + 1;
+      await dbPut('ranked', ranked[i]);
+    }
+  }
+}
+
+// ══════════════════════════════════════════════
+//  DRAG AND DROP (touch + mouse)
+// ══════════════════════════════════════════════
+
+let dragState = null; // { rankedId, ghost, startY, lastTargetId }
+
+function attachDragListeners() {
+  document.querySelectorAll('[data-drag-handle]').forEach(handle => {
+    handle.addEventListener('mousedown', onDragHandleDown);
+    handle.addEventListener('touchstart', onDragHandleDown, { passive: false });
+  });
+}
+
+function onDragHandleDown(e) {
+  e.preventDefault();
+  const row = e.currentTarget.closest('.item-row');
+  if (!row) return;
+  const rankedId = row.dataset.rankedId;
+  if (!rankedId) return;
+
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const rect = row.getBoundingClientRect();
+
+  // Create ghost
+  const ghost = row.cloneNode(true);
+  ghost.style.cssText = `
+    position: fixed;
+    left: ${rect.left}px;
+    top: ${rect.top}px;
+    width: ${rect.width}px;
+    opacity: 0.85;
+    pointer-events: none;
+    z-index: 9999;
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    transition: none;
+  `;
+  document.body.appendChild(ghost);
+
+  row.classList.add('dragging');
+
+  dragState = {
+    rankedId,
+    ghost,
+    offsetY: clientY - rect.top,
+    lastTargetId: null,
+  };
+
+  document.addEventListener('mousemove', onDragMove);
+  document.addEventListener('touchmove', onDragMove, { passive: false });
+  document.addEventListener('mouseup', onDragEnd);
+  document.addEventListener('touchend', onDragEnd);
+}
+
+function onDragMove(e) {
+  if (!dragState) return;
+  e.preventDefault();
+
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+
+  // Move ghost
+  dragState.ghost.style.top = (clientY - dragState.offsetY) + 'px';
+
+  // Find target row under finger/cursor
+  dragState.ghost.style.display = 'none';
+  const elUnder = document.elementFromPoint(clientX, clientY);
+  dragState.ghost.style.display = '';
+
+  const targetRow = elUnder?.closest('.item-row');
+  const targetId = targetRow?.dataset.rankedId || null;
+
+  // Update highlight
+  document.querySelectorAll('.item-row').forEach(r => r.classList.remove('drag-over'));
+  if (targetId && targetId !== dragState.rankedId) {
+    targetRow.classList.add('drag-over');
+    dragState.lastTargetId = targetId;
+  } else {
+    dragState.lastTargetId = null;
+  }
+}
+
+async function onDragEnd(e) {
+  if (!dragState) return;
+
+  document.removeEventListener('mousemove', onDragMove);
+  document.removeEventListener('touchmove', onDragMove);
+  document.removeEventListener('mouseup', onDragEnd);
+  document.removeEventListener('touchend', onDragEnd);
+
+  dragState.ghost.remove();
+  document.querySelectorAll('.item-row').forEach(r => r.classList.remove('dragging', 'drag-over'));
+
+  const srcId = dragState.rankedId;
+  const tgtId = dragState.lastTargetId;
+  dragState = null;
+
+  if (!tgtId || srcId === tgtId) return;
+
+  const src = state.ranked.find(r => r.id === srcId);
+  const tgt = state.ranked.find(r => r.id === tgtId);
+  if (!src || !tgt) return;
+
+  // Unranked → ranked: promote and place at target position
+  if (src.rank === null && tgt.rank !== null) {
+    src.rank = tgt.rank;
+    const others = rankedForList(state.activeListId)
+      .filter(r => r.rank !== null && r.id !== src.id && r.rank >= tgt.rank)
+      .sort((a,b) => a.rank - b.rank);
+    for (const r of others) { r.rank++; await dbPut('ranked', r); }
+    await dbPut('ranked', src);
+    await resequence();
+    render();
+    return;
+  }
+
+  if (src.rank === null || tgt.rank === null) { render(); return; }
+
+  // Ranked → ranked: reorder
+  const allRanked = rankedForList(state.activeListId)
+    .filter(r => r.rank !== null)
+    .sort((a,b) => a.rank - b.rank);
+
+  const srcIdx = allRanked.findIndex(r => r.id === src.id);
+  const tgtIdx = allRanked.findIndex(r => r.id === tgt.id);
+  allRanked.splice(srcIdx, 1);
+  allRanked.splice(tgtIdx, 0, src);
+
+  for (let i = 0; i < allRanked.length; i++) {
+    allRanked[i].rank = i + 1;
+    await dbPut('ranked', allRanked[i]);
+  }
+
+  render();
+}
+
+// ══════════════════════════════════════════════
+//  BANK MODAL
+// ══════════════════════════════════════════════
+
+function openAddFromBank() {
+  document.getElementById('bankModalSearch').value = '';
+  renderBankModal('');
+  openModal('modalFromBank');
+}
+
+function filterBankModal(val) {
+  renderBankModal(val);
+}
+
+function renderBankModal(search) {
+  const list = activeList();
+  if (!list) return;
+  const items = state.items; // universal bank
+  const rankedItemIds = new Set(rankedForList(list.id).map(r => r.itemId));
+
+  let filtered = items.filter(i =>
+    !search || i.title.toLowerCase().includes(search.toLowerCase())
+  ).sort((a,b) => (a.title||'').localeCompare(b.title||''));
+
+  document.getElementById('bankModalList').innerHTML = filtered.map(item => {
+    const inList = rankedItemIds.has(item.id);
+    return `<div class="bank-item">
+      <span class="item-title">${esc(item.title)}</span>
+      ${inList
+        ? '<span class="in-list-badge">In list</span>'
+        : `<button class="btn small primary" style="margin-left:auto" onclick="addToRankedFromBank('${item.id}')">+ Add</button>`
+      }
+    </div>`;
+  }).join('') || '<div style="color:var(--text-muted);padding:16px;text-align:center">No items found</div>';
+}
+
+// ══════════════════════════════════════════════
+//  FIELD VISIBILITY
+// ══════════════════════════════════════════════
+
+async function toggleField(key) {
+  const list = activeList();
+  if (!list) return;
+  const idx = list.visibleFields.indexOf(key);
+  if (idx >= 0) list.visibleFields.splice(idx, 1);
+  else list.visibleFields.push(key);
+  await dbPut('lists', list);
+  renderSettings();
+  updateFilterDropdowns();
+}
+
+// ══════════════════════════════════════════════
+//  NEW LIST
+// ══════════════════════════════════════════════
+
+function openNewList() {
+  document.getElementById('newListName').value = '';
+  openModal('modalNewList');
+}
+
+async function createList() {
+  const name = document.getElementById('newListName').value.trim();
+  if (!name) { toast('Name required'); return; }
+  const newList = { id: uid(), name, visibleFields: [...DEFAULT_VISIBLE] };
+  await dbPut('lists', newList);
+  state.lists.push(newList);
+  state.activeListId = newList.id;
+  closeModal('modalNewList');
+  toast('List created');
+  render();
+}
+
+// ══════════════════════════════════════════════
+//  FILTERS
+// ══════════════════════════════════════════════
+
+function filterRanked(search) {
+  const field = document.getElementById('rankFilterField').value;
+  const val = document.getElementById('rankFilterValue').value;
+  updateValueDropdown('rankFilterField','rankFilterValue', itemsForList(state.activeListId));
+  renderRanked(search, field, val);
+}
+
+// ══════════════════════════════════════════════
+//  EXPORT
+// ══════════════════════════════════════════════
+
+function openExport() {
+  // Populate list selector
+  const sel = document.getElementById('exportListSelect');
+  sel.innerHTML = state.lists.map(l =>
+    `<option value="${l.id}" ${l.id === state.activeListId ? 'selected' : ''}>${esc(l.name)}</option>`
+  ).join('');
+
+  buildExport();
+  openModal('modalExport');
+}
+
+function getExportList() {
+  const sel = document.getElementById('exportListSelect');
+  const listId = sel ? sel.value : state.activeListId;
+  return state.lists.find(l => l.id === listId) || activeList();
+}
+
+function buildExport() {
+  const list = getExportList();
+  if (!list) return;
+
+  const filterField = document.getElementById('exportFilterField').value;
+  const filterVal   = document.getElementById('exportFilterValue').value;
+  const rankedOnly  = document.getElementById('exportRankedOnly').checked;
+
+  // Visible fields for the selected list
+  const vf = FIELDS.filter(f => list.visibleFields.includes(f.key));
+
+  // All items and ranked entries for this list
+  const items  = state.items.filter(i => i.listId === list.id);
+  const ranked = state.ranked
+    .filter(r => r.listId === list.id)
+    .filter(r => !rankedOnly || r.rank !== null)
+    .sort((a,b) => {
+      if (a.rank === null && b.rank === null) return 0;
+      if (a.rank === null) return 1;
+      if (b.rank === null) return -1;
+      return a.rank - b.rank;
+    });
+
+  // Update field filter dropdown based on selected list's items
+  updateExportFieldDropdown(list, items, filterField, filterVal);
+
+  const filtered = ranked.filter(r => {
+    const item = items.find(i => i.id === r.itemId);
+    if (!item) return false;
+    return !filterField || !filterVal || String(item[filterField]||'') === filterVal;
+  });
+
+  // Build table
+  const thead = document.querySelector('#exportTable thead');
+  const tbody = document.querySelector('#exportTable tbody');
+  const cols = [{ key: '_rank', label: '#' }, ...vf];
+
+  thead.innerHTML = '<tr>' + cols.map(f => `<th>${esc(f.label)}</th>`).join('') + '</tr>';
+  tbody.innerHTML = filtered.map(r => {
+    const item = items.find(i => i.id === r.itemId);
+    if (!item) return '';
+    return '<tr>' + cols.map(f => {
+      if (f.key === '_rank') return `<td>${r.rank ?? '—'}</td>`;
+      return `<td>${esc(item[f.key]||'')}</td>`;
+    }).join('') + '</tr>';
+  }).join('');
+
+  // Build raw text
+  const colWidths = cols.map(c => Math.max(c.label.length, ...filtered.map(r => {
+    const item = items.find(i => i.id === r.itemId);
+    if (!item) return 0;
+    if (c.key === '_rank') return String(r.rank ?? '—').length;
+    return String(item[c.key]||'').length;
+  })));
+
+  const pad = (str, len) => String(str||'').padEnd(len);
+  const header  = cols.map((c,i) => pad(c.label, colWidths[i])).join(' | ');
+  const divider = colWidths.map(w => '-'.repeat(w)).join('-+-');
+  const rows = filtered.map(r => {
+    const item = items.find(i => i.id === r.itemId);
+    if (!item) return '';
+    return cols.map((c,i) => {
+      const val = c.key === '_rank' ? (r.rank ?? '—') : (item[c.key]||'');
+      return pad(val, colWidths[i]);
+    }).join(' | ');
+  }).filter(Boolean);
+
+  document.getElementById('exportText').textContent = [header, divider, ...rows].join('\n');
+}
+
+function updateExportFieldDropdown(list, items, currentField, currentVal) {
+  const vf = FIELDS.filter(f => list.visibleFields.includes(f.key) && f.key !== 'title');
+  const fieldSel = document.getElementById('exportFilterField');
+  fieldSel.innerHTML = `<option value="">All fields</option>` +
+    vf.map(f => `<option value="${f.key}" ${f.key === currentField ? 'selected' : ''}>${esc(f.label)}</option>`).join('');
+
+  const valSel = document.getElementById('exportFilterValue');
+  if (!currentField) {
+    valSel.innerHTML = '<option value="">Any</option>';
+    return;
+  }
+  const vals = [...new Set(items.map(i => i[currentField]).filter(Boolean))].sort();
+  valSel.innerHTML = '<option value="">Any</option>' +
+    vals.map(v => `<option value="${esc(v)}" ${v === currentVal ? 'selected' : ''}>${esc(v)}</option>`).join('');
+}
+
+function toggleExportRaw() {
+  const raw = document.getElementById('exportText');
+  raw.style.display = raw.style.display === 'block' ? 'none' : 'block';
+}
+
+function copyExport() {
+  const raw = document.getElementById('exportText');
+  const isRaw = raw.style.display === 'block';
+  let text;
+  if (isRaw) {
+    text = raw.textContent;
+  } else {
+    // Copy table as TSV
+    const rows = [];
+    const thead = document.querySelector('#exportTable thead tr');
+    rows.push([...thead.querySelectorAll('th')].map(th => th.textContent).join('\t'));
+    document.querySelectorAll('#exportTable tbody tr').forEach(tr => {
+      rows.push([...tr.querySelectorAll('td')].map(td => td.textContent).join('\t'));
+    });
+    text = rows.join('\n');
+  }
+  navigator.clipboard.writeText(text).then(() => toast('Copied!')).catch(() => toast('Copy failed'));
+}
+
+// ══════════════════════════════════════════════
+//  IMPORT
+// ══════════════════════════════════════════════
+
+let importParsed = { headers: [], rows: [] };
+let importMapping = {};
+
+function openImport() {
+  resetImport();
+  openModal('modalImport');
+}
+
+function resetImport() {
+  document.getElementById('importPasteArea').value = '';
+  document.getElementById('importPasteHint').textContent = '';
+  document.getElementById('importStep2').style.display = 'none';
+  document.getElementById('importConfirmBtn').style.display = 'none';
+  importParsed = { headers: [], rows: [] };
+  importMapping = {};
+}
+
+function importParsePaste() {
+  const raw = document.getElementById('importPasteArea').value.trim();
+  if (!raw) {
+    document.getElementById('importStep2').style.display = 'none';
+    document.getElementById('importConfirmBtn').style.display = 'none';
+    document.getElementById('importPasteHint').textContent = '';
+    return;
+  }
+
+  // Parse TSV
+  const lines = raw.split('\n').filter(l => l.trim());
+  if (lines.length < 2) {
+    document.getElementById('importPasteHint').textContent = 'Need at least a header row and one data row.';
+    return;
+  }
+
+  const headers = lines[0].split('\t').map(h => h.trim());
+  const rows = lines.slice(1).map(l => l.split('\t').map(c => c.trim()));
+
+  importParsed = { headers, rows };
+
+  // Auto-map: try to match header names to field keys/labels
+  importMapping = {};
+  headers.forEach((h, i) => {
+    const lower = h.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const match = FIELDS.find(f =>
+      f.key.toLowerCase() === lower ||
+      f.label.toLowerCase().replace(/[^a-z0-9]/g, '') === lower
+    );
+    importMapping[i] = match ? match.key : 'skip';
+  });
+
+  document.getElementById('importPasteHint').textContent = `${rows.length} rows detected.`;
+  renderImportMapping();
+  renderImportPreview();
+
+  document.getElementById('importStep2').style.display = 'block';
+  document.getElementById('importConfirmBtn').style.display = 'inline-block';
+}
+
+function renderImportMapping() {
+  const { headers } = importParsed;
+  const fieldOptions = `<option value="skip">— Skip —</option>` +
+    FIELDS.map(f => `<option value="${f.key}">${esc(f.label)}</option>`).join('');
+
+  document.getElementById('importColumnMap').innerHTML = headers.map((h, i) => `
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:12px;color:var(--text-dim);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(h)}">
+        "${esc(h)}"
+      </span>
+      <span style="color:var(--text-muted);font-size:12px;">→</span>
+      <select style="flex:1" onchange="importMapping[${i}]=this.value;renderImportPreview()">
+        ${fieldOptions.replace(`value="${importMapping[i]}"`, `value="${importMapping[i]}" selected`)}
+      </select>
+    </div>
+  `).join('');
+}
+
+function renderImportPreview() {
+  const { headers, rows } = importParsed;
+  const mappedFields = Object.entries(importMapping)
+    .filter(([,v]) => v !== 'skip')
+    .map(([i, key]) => ({ i: parseInt(i), key, label: FIELDS.find(f => f.key === key)?.label || key }));
+
+  const thead = document.querySelector('#importPreviewTable thead');
+  const tbody = document.querySelector('#importPreviewTable tbody');
+
+  thead.innerHTML = '<tr>' + mappedFields.map(f => `<th>${esc(f.label)}</th>`).join('') + '</tr>';
+  tbody.innerHTML = rows.slice(0, 5).map(row =>
+    '<tr>' + mappedFields.map(f => `<td>${esc(row[f.i] || '')}</td>`).join('') + '</tr>'
+  ).join('');
+
+  const showing = Math.min(5, rows.length);
+  document.getElementById('importRowCount').textContent =
+    `Previewing ${showing} of ${rows.length} rows. All ${rows.length} will be imported.`;
+}
+
+async function confirmImport() {
+  const { rows } = importParsed;
+  const mappedFields = Object.entries(importMapping)
+    .filter(([,v]) => v !== 'skip')
+    .map(([i, key]) => ({ i: parseInt(i), key }));
+
+  const titleMapping = mappedFields.find(f => f.key === 'title');
+  if (!titleMapping) {
+    toast('Map at least one column to Title before importing.');
+    return;
+  }
+
+  let added = 0;
+  for (const row of rows) {
+    const title = row[titleMapping.i]?.trim();
+    if (!title) continue;
+
+    const item = { id: uid(), listId: state.activeListId };
+    FIELDS.forEach(f => { item[f.key] = ''; });
+    mappedFields.forEach(({ i, key }) => { item[key] = row[i]?.trim() || ''; });
+
+    await dbPut('items', item);
+    state.items.push(item);
+    added++;
+  }
+
+  closeModal('modalImport');
+  resetImport();
+  bankPage = 0;
+  toast(`${added} items imported`);
+  render();
+}
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+// Field value dropdowns update on field change
+document.getElementById('rankFilterField').addEventListener('change', function() {
+  updateValueDropdown('rankFilterField','rankFilterValue', itemsForList(state.activeListId));
+});
+document.getElementById('bankFilterField').addEventListener('change', function() {
+  updateValueDropdown('bankFilterField','bankFilterValue', itemsForList(state.activeListId));
+});
+document.getElementById('exportFilterField').addEventListener('change', function() {
+  updateValueDropdown('exportFilterField','exportFilterValue', itemsForList(state.activeListId));
+  buildExport();
+});
+
+// ══════════════════════════════════════════════
+//  TIERS
+// ══════════════════════════════════════════════
+
+const DEFAULT_TIERS = [
+  { id: 'sp', label: 'S+', color: '#ff6b6b' },
+  { id: 'a',  label: 'A',  color: '#ffa94d' },
+  { id: 'b',  label: 'B',  color: '#ffd43b' },
+  { id: 'c',  label: 'C',  color: '#69db7c' },
+  { id: 'd',  label: 'D',  color: '#4dabf7' },
+  { id: 'f',  label: 'F',  color: '#868e96' },
+];
+
+let rankedView = 'ranked'; // 'ranked' | 'tier'
+let tierDragChip = null;
+let tierDragItemId = null;
+
+function getTiers() {
+  const list = activeList();
+  if (!list) return DEFAULT_TIERS;
+  if (!list.tiers) list.tiers = DEFAULT_TIERS.map(t => ({ ...t }));
+  return list.tiers;
+}
+
+function getTierAssignments() {
+  const list = activeList();
+  if (!list) return {};
+  if (!list.tierAssignments) list.tierAssignments = {};
+  return list.tierAssignments;
+}
+
+async function saveTiers() {
+  const list = activeList();
+  if (!list) return;
+  await dbPut('lists', list);
+}
+
+function setRankedView(view) {
+  rankedView = view;
+  document.getElementById('rankedScroll').style.display = view === 'ranked' ? 'flex' : 'none';
+  document.getElementById('tierScroll').style.display  = view === 'tier'   ? 'flex' : 'none';
+  document.getElementById('viewRankedBtn').classList.toggle('active', view === 'ranked');
+  document.getElementById('viewTierBtn').classList.toggle('active', view === 'tier');
+  if (view === 'tier') renderTierView();
+}
+
+function renderTierView() {
+  const list = activeList();
+  if (!list) return;
+  const tiers = getTiers();
+  const assignments = getTierAssignments();
+  const ranked = rankedForList(list.id).filter(r => r.rank !== null).sort((a,b) => a.rank - b.rank);
+  const items = itemsForList(list.id);
+  const getItem = id => items.find(i => i.id === id);
+
+  // Group by tier
+  const groups = {};
+  tiers.forEach(t => { groups[t.id] = []; });
+  groups['__untiered'] = [];
+
+  ranked.forEach(r => {
+    const tier = assignments[r.itemId];
+    if (tier && groups[tier]) groups[tier].push(r);
+    else groups['__untiered'].push(r);
+  });
+
+  const tierHtml = tiers.map(t => {
+    const items_ = groups[t.id] || [];
+    return `<div class="tier-row">
+      <div class="tier-header" style="background:${t.color}22;border-left:4px solid ${t.color}">
+        <span class="tier-label" style="color:${t.color}">${esc(t.label)}</span>
+        <span class="tier-count">${items_.length} item${items_.length !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="tier-items" data-tier-id="${t.id}"
+           ondragover="tierDragOver(event)"
+           ondrop="tierDrop(event,'${t.id}')"
+           ondragleave="tierDragLeave(event)">
+        ${items_.map(r => {
+          const item = getItem(r.itemId);
+          if (!item) return '';
+          return tierChipHtml(item, r);
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  const untiered = groups['__untiered'];
+  const untieredHtml = `<div class="tier-row tier-untiered">
+    <div class="tier-header">
+      <span class="tier-label" style="color:var(--text-muted)">—</span>
+      <span style="color:var(--text-muted);font-size:13px;">Untiered</span>
+      <span class="tier-count">${untiered.length} items</span>
+    </div>
+    <div class="tier-items" data-tier-id="__untiered"
+         ondragover="tierDragOver(event)"
+         ondrop="tierDrop(event,'__untiered')"
+         ondragleave="tierDragLeave(event)">
+      ${untiered.map(r => {
+        const item = getItem(r.itemId);
+        if (!item) return '';
+        return tierChipHtml(item, r);
+      }).join('')}
+    </div>
+  </div>`;
+
+  document.getElementById('tierList').innerHTML = tierHtml + untieredHtml;
+  attachTierChipListeners();
+}
+
+function tierChipHtml(item, r) {
+  return `<div class="tier-chip" data-item-id="${item.id}" draggable="true">
+    <span class="tier-chip-rank">#${r.rank}</span>
+    <span>${esc(item.title)}</span>
+  </div>`;
+}
+
+function attachTierChipListeners() {
+  document.querySelectorAll('.tier-chip').forEach(chip => {
+    chip.addEventListener('mousedown', tierChipDragStart);
+    chip.addEventListener('touchstart', tierChipDragStart, { passive: false });
+    chip.addEventListener('dragstart', e => {
+      tierDragItemId = chip.dataset.itemId;
+      chip.classList.add('dragging');
+    });
+    chip.addEventListener('dragend', () => chip.classList.remove('dragging'));
+  });
+}
+
+// Touch drag for tier chips
+let tierTouchDragState = null;
+
+function tierChipDragStart(e) {
+  if (e.type === 'mousedown') return; // handled by native drag
+  e.preventDefault();
+  const chip = e.currentTarget;
+  tierDragItemId = chip.dataset.itemId;
+  const rect = chip.getBoundingClientRect();
+  const touch = e.touches[0];
+
+  const ghost = chip.cloneNode(true);
+  ghost.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;
+    opacity:0.85;pointer-events:none;z-index:9999;background:var(--surface2);
+    border:1px solid var(--accent);border-radius:4px;`;
+  document.body.appendChild(ghost);
+  chip.classList.add('dragging');
+
+  tierTouchDragState = { ghost, chip, offsetY: touch.clientY - rect.top, offsetX: touch.clientX - rect.left };
+
+  document.addEventListener('touchmove', tierTouchMove, { passive: false });
+  document.addEventListener('touchend', tierTouchEnd);
+}
+
+function tierTouchMove(e) {
+  if (!tierTouchDragState) return;
+  e.preventDefault();
+  const touch = e.touches[0];
+  const { ghost, offsetX, offsetY } = tierTouchDragState;
+  ghost.style.top  = (touch.clientY - offsetY) + 'px';
+  ghost.style.left = (touch.clientX - offsetX) + 'px';
+
+  ghost.style.display = 'none';
+  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+  ghost.style.display = '';
+
+  document.querySelectorAll('.tier-items').forEach(z => z.classList.remove('drag-over-tier'));
+  const zone = el?.closest('.tier-items');
+  if (zone) zone.classList.add('drag-over-tier');
+}
+
+async function tierTouchEnd(e) {
+  if (!tierTouchDragState) return;
+  document.removeEventListener('touchmove', tierTouchMove);
+  document.removeEventListener('touchend', tierTouchEnd);
+
+  const { ghost, chip } = tierTouchDragState;
+  const touch = e.changedTouches[0];
+  ghost.style.display = 'none';
+  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+  ghost.remove();
+  chip.classList.remove('dragging');
+  document.querySelectorAll('.tier-items').forEach(z => z.classList.remove('drag-over-tier'));
+  tierTouchDragState = null;
+
+  const zone = el?.closest('.tier-items');
+  if (zone && tierDragItemId) {
+    await assignTier(tierDragItemId, zone.dataset.tierId);
+  }
+}
+
+function tierDragOver(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over-tier');
+}
+
+function tierDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over-tier');
+}
+
+async function tierDrop(e, tierId) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over-tier');
+  if (!tierDragItemId) return;
+  await assignTier(tierDragItemId, tierId);
+  tierDragItemId = null;
+}
+
+async function assignTier(itemId, tierId) {
+  const list = activeList();
+  if (!list) return;
+  if (!list.tierAssignments) list.tierAssignments = {};
+  if (tierId === '__untiered') delete list.tierAssignments[itemId];
+  else list.tierAssignments[itemId] = tierId;
+  await dbPut('lists', list);
+  renderTierView();
+  renderRanked(
+    document.getElementById('rankSearch')?.value || '',
+    document.getElementById('rankFilterField')?.value || '',
+    document.getElementById('rankFilterValue')?.value || ''
+  );
+}
+
+async function autoAssignTiers() {
+  const list = activeList();
+  if (!list) return;
+  const tiers = getTiers();
+  const ranked = rankedForList(list.id).filter(r => r.rank !== null).sort((a,b) => a.rank - b.rank);
+  if (!ranked.length) { toast('No ranked items to assign'); return; }
+
+  if (!list.tierAssignments) list.tierAssignments = {};
+  const perTier = Math.ceil(ranked.length / tiers.length);
+  ranked.forEach((r, i) => {
+    const tierIdx = Math.min(Math.floor(i / perTier), tiers.length - 1);
+    list.tierAssignments[r.itemId] = tiers[tierIdx].id;
+  });
+  await dbPut('lists', list);
+  toast('Tiers auto-assigned');
+  renderTierView();
+  renderRanked(
+    document.getElementById('rankSearch')?.value || '',
+    document.getElementById('rankFilterField')?.value || '',
+    document.getElementById('rankFilterValue')?.value || ''
+  );
+}
+
+// ── Tier settings ──
+
+function openTierSettings() {
+  renderTierSettingsList();
+  openModal('modalTierSettings');
+}
+
+function renderTierSettingsList() {
+  const tiers = getTiers();
+  const containerId = document.getElementById('modalTierList') ? 'modalTierList' : 'tierSettingsList';
+  const html = tiers.map((t, i) => `
+    <div class="tier-setting-row" id="tier-setting-${t.id}">
+      <input type="color" class="tier-color-swatch" value="${t.color}"
+             onchange="updateTierColor('${t.id}', this.value)">
+      <input class="form-input" style="flex:1" type="text" value="${esc(t.label)}"
+             onchange="updateTierLabel('${t.id}', this.value)"
+             placeholder="Tier name">
+      <button class="btn small danger" onclick="deleteTier('${t.id}')">✕</button>
+    </div>
+  `).join('');
+  document.getElementById('modalTierList').innerHTML = html;
+
+  // Also update settings tab if visible
+  const settingsEl = document.getElementById('tierSettingsList');
+  if (settingsEl) settingsEl.innerHTML = html.replace(/modalTierList/g, 'tierSettingsList');
+}
+
+async function updateTierColor(tierId, color) {
+  const list = activeList();
+  if (!list || !list.tiers) return;
+  const t = list.tiers.find(t => t.id === tierId);
+  if (t) { t.color = color; await saveTiers(); }
+}
+
+async function updateTierLabel(tierId, label) {
+  const list = activeList();
+  if (!list || !list.tiers) return;
+  const t = list.tiers.find(t => t.id === tierId);
+  if (t) { t.label = label; await saveTiers(); }
+}
+
+async function deleteTier(tierId) {
+  const list = activeList();
+  if (!list) return;
+  if (!list.tiers) list.tiers = DEFAULT_TIERS.map(t => ({...t}));
+  list.tiers = list.tiers.filter(t => t.id !== tierId);
+  // Unassign items from deleted tier
+  if (list.tierAssignments) {
+    Object.keys(list.tierAssignments).forEach(itemId => {
+      if (list.tierAssignments[itemId] === tierId) delete list.tierAssignments[itemId];
+    });
+  }
+  await saveTiers();
+  renderTierSettingsList();
+  if (rankedView === 'tier') renderTierView();
+}
+
+async function addTier() {
+  const list = activeList();
+  if (!list) return;
+  if (!list.tiers) list.tiers = DEFAULT_TIERS.map(t => ({...t}));
+  const newTier = { id: uid(), label: 'New', color: '#aabbcc' };
+  list.tiers.push(newTier);
+  await saveTiers();
+  renderTierSettingsList();
+  if (rankedView === 'tier') renderTierView();
+}
+
+function renderSettings() {
+  const list = activeList();
+  if (!list) return;
+  document.getElementById('settingsListName').textContent = list.name;
+
+  const html = FIELDS.filter(f => f.key !== 'title').map(f => {
+    const on = list.visibleFields.includes(f.key);
+    return `<div class="field-toggle ${on ? 'on' : ''}" onclick="toggleField('${f.key}')">
+      ${esc(f.label)}
+    </div>`;
+  }).join('');
+  document.getElementById('fieldToggles').innerHTML = html;
+
+  // Tier settings
+  if (!list.tiers) list.tiers = DEFAULT_TIERS.map(t => ({...t}));
+  const tierHtml = list.tiers.map(t => `
+    <div class="tier-setting-row">
+      <input type="color" class="tier-color-swatch" value="${t.color}"
+             onchange="updateTierColor('${t.id}', this.value)">
+      <input class="form-input" style="flex:1" type="text" value="${esc(t.label)}"
+             onchange="updateTierLabel('${t.id}', this.value)"
+             placeholder="Tier name">
+      <button class="btn small danger" onclick="deleteTier('${t.id}')">✕</button>
+    </div>
+  `).join('');
+  document.getElementById('tierSettingsList').innerHTML = tierHtml;
+}
+
+// ══════════════════════════════════════════════
+//  BACKUP & RESTORE
+// ══════════════════════════════════════════════
+
+function backupData() {
+  const backup = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    lists:  state.lists,
+    items:  state.items,
+    ranked: state.ranked,
+  };
+
+  const json = JSON.stringify(backup, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const date = new Date().toISOString().slice(0, 10);
+  a.href     = url;
+  a.download = `ranklist-backup-${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Backup downloaded');
+}
+
+let restoreData = null;
+
+function openRestore() {
+  restoreData = null;
+  document.getElementById('restoreStatus').textContent = '';
+  document.getElementById('restoreConfirmBtn').style.display = 'none';
+  document.getElementById('restoreFileInput').value = '';
+  openModal('modalRestore');
+}
+
+function restoreFileSelected(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.lists || !data.items || !data.ranked) {
+        document.getElementById('restoreStatus').textContent = '✗ Invalid backup file — missing required data.';
+        document.getElementById('restoreStatus').style.color = 'var(--danger)';
+        document.getElementById('restoreConfirmBtn').style.display = 'none';
+        return;
+      }
+      restoreData = data;
+      const summary = `✓ Found ${data.lists.length} list${data.lists.length !== 1 ? 's' : ''}, ${data.items.length} items, ${data.ranked.length} ranked entries. Exported ${data.exportedAt ? new Date(data.exportedAt).toLocaleDateString() : 'unknown date'}.`;
+      document.getElementById('restoreStatus').textContent = summary;
+      document.getElementById('restoreStatus').style.color = 'var(--success)';
+      document.getElementById('restoreConfirmBtn').style.display = 'inline-block';
+    } catch {
+      document.getElementById('restoreStatus').textContent = '✗ Could not read file — make sure it is a valid JSON backup.';
+      document.getElementById('restoreStatus').style.color = 'var(--danger)';
+      document.getElementById('restoreConfirmBtn').style.display = 'none';
+    }
+  };
+  reader.readAsText(file);
+}
+
+async function confirmRestore() {
+  if (!restoreData) return;
+
+  // Clear existing data
+  const tx = db.transaction(['lists','items','ranked'], 'readwrite');
+  tx.objectStore('lists').clear();
+  tx.objectStore('items').clear();
+  tx.objectStore('ranked').clear();
+
+  await new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = rej; });
+
+  // Write restored data
+  for (const list  of restoreData.lists)  await dbPut('lists',  list);
+  for (const item  of restoreData.items)  await dbPut('items',  item);
+  for (const entry of restoreData.ranked) await dbPut('ranked', entry);
+
+  state.lists  = restoreData.lists;
+  state.items  = restoreData.items;
+  state.ranked = restoreData.ranked;
+  state.activeListId = state.lists[0]?.id || null;
+
+  closeModal('modalRestore');
+  toast(`Restored ${state.items.length} items across ${state.lists.length} lists`);
+  render();
+}
+
+// ══════════════════════════════════════════════
+//  SIDEBAR TOGGLE
+// ══════════════════════════════════════════════
+
+function toggleSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const btn = document.getElementById('sidebarToggleBtn');
+  const collapsed = sidebar.classList.toggle('collapsed');
+  btn.textContent = collapsed ? '▶' : '☰';
+  btn.title = collapsed ? 'Show list panel' : 'Hide list panel';
+}
+
+switchTab('ranked');
+initDB();
+</script>
+</body>
+</html>
