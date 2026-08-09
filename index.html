@@ -34,9 +34,11 @@
     color: var(--text);
     font-family: var(--font-body);
     font-size: 14px;
-    min-height: 100vh;
+    height: 100vh;
+    max-height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
 
   /* ── Header ── */
@@ -312,7 +314,7 @@
     flex-direction: column;
     flex: 1;
     overflow: hidden;
-    height: calc(100vh - 52px - 56px);
+    min-height: 0;
   }
 
   .content {
@@ -320,6 +322,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    min-height: 0;
   }
 
   /* ── Sidebar ── */
@@ -399,14 +402,6 @@
     background: var(--bg);
     padding: 1px 6px;
     border-radius: 10px;
-  }
-
-  /* ── Content ── */
-  .content {
-    flex: 1;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
   }
 
   /* ── Panel header ── */
@@ -1021,6 +1016,15 @@
   .settings-section { padding: 16px; border-bottom: 1px solid var(--border); }
   .settings-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
 
+  @keyframes rowFlash {
+    0%   { background: var(--accent-dim); border-color: var(--accent); }
+    30%  { background: var(--accent-dim); border-color: var(--accent); }
+    100% { background: transparent; border-color: var(--border); }
+  }
+  .item-row.flash {
+    animation: rowFlash 2s ease-out;
+  }
+
   .rank-number-1 { color: var(--gold); }
   .rank-number-2 { color: #c0c0d0; }
   .rank-number-3 { color: #cd7f32; }
@@ -1105,7 +1109,7 @@
   <div class="content">
 
     <!-- RANKED TAB -->
-    <div id="tab-ranked">
+    <div id="tab-ranked" style="flex:1;display:none;flex-direction:column;min-height:0;overflow:hidden;">
       <div class="panel-header">
         <div class="panel-title" id="rankedPanelTitle">Ranked</div>
         <div class="filter-row">
@@ -1124,7 +1128,7 @@
         </div>
       </div>
       <!-- Ranked view -->
-      <div class="scroll-area" id="rankedScroll">
+      <div class="scroll-area" id="rankedScroll" style="flex-direction:column;">
         <div class="unranked-section" id="unrankedSection">
           <div class="section-header">
             <span class="section-title">Unranked</span>
@@ -1157,7 +1161,7 @@
     </div>
 
     <!-- BANK TAB -->
-    <div id="tab-bank" style="display:none; flex:1; display:none; flex-direction:column;">
+    <div id="tab-bank" style="display:none;flex:1;flex-direction:column;min-height:0;overflow:hidden;">
       <div class="panel-header">
         <div class="panel-title" id="bankPanelTitle">Item Bank</div>
         <div class="filter-row">
@@ -1198,7 +1202,7 @@
     </div>
 
     <!-- SETTINGS TAB -->
-    <div id="tab-settings" style="display:none; flex:1; flex-direction:column; overflow-y:auto;">
+    <div id="tab-settings" style="display:none;flex:1;flex-direction:column;min-height:0;overflow-y:auto;">
       <div class="settings-section">
         <div class="settings-title">Visible Fields — <span id="settingsListName">—</span></div>
         <p style="font-size:12px; color:var(--text-dim); margin-bottom:12px;">Toggle which fields appear in the list view and export. Data is always preserved.</p>
@@ -1982,8 +1986,6 @@ function switchTab(tab) {
     const el = document.getElementById('tab-' + tab);
     if (el) { el.style.display = 'flex'; el.style.flexDirection = 'column'; }
   }
-
-  // Update bottom nav
   ['ranked','tier','bank','settings'].forEach(t => {
     const btn = document.getElementById('nav-' + t);
     if (btn) btn.classList.toggle('active', t === tab);
@@ -2169,13 +2171,21 @@ async function addToRankedFromBank(itemId) {
   await dbPut('ranked', entry);
   state.ranked.push(entry);
   toast('Added to list (unranked)');
-  // Re-render modal immediately so button updates to "In list"
+  // Re-render modal if open
   const modalOpen = document.getElementById('modalFromBank').classList.contains('open');
   if (modalOpen) {
     renderBankModal(document.getElementById('bankModalSearch').value);
-  } else {
-    render();
   }
+  // Re-render bank table if bank tab is active (updates In List button)
+  if (state.activeTab === 'bank') {
+    renderBankPage();
+  }
+  // Always re-render ranked list so item appears immediately
+  renderRanked(
+    document.getElementById('rankSearch')?.value || '',
+    document.getElementById('rankFilterField')?.value || '',
+    document.getElementById('rankFilterValue')?.value || ''
+  );
 }
 
 async function removeFromList(rankedId) {
@@ -2240,6 +2250,10 @@ async function setRank(rankedId, value) {
   }
 
   render();
+  setTimeout(() => {
+    const el = document.getElementById('row-' + rankedId);
+    if (el) { el.classList.add('flash'); el.addEventListener('animationend', () => el.classList.remove('flash'), { once: true }); }
+  }, 50);
 }
 
 async function resequence() {
@@ -2391,6 +2405,10 @@ async function onDragEnd(e) {
   }
 
   render();
+  setTimeout(() => {
+    const el = document.getElementById('row-' + srcId);
+    if (el) { el.classList.add('flash'); el.addEventListener('animationend', () => el.classList.remove('flash'), { once: true }); }
+  }, 50);
 }
 
 // ══════════════════════════════════════════════
