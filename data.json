@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-08-09T12:09:02.630Z",
+  "savedAt": "2026-08-09T12:09:12.795Z",
   "lists": [
     {
       "id": "a9a102f3-c48f-4376-bfee-e54417017d30",
@@ -88,6 +88,16 @@
         }
       ],
       "tierAssignments": {}
+    },
+    {
+      "id": "32c4409a-a7fb-46b2-b245-5ece51020abc",
+      "name": "test",
+      "visibleFields": [
+        "title",
+        "platform",
+        "genre",
+        "releaseYear"
+      ]
     }
   ],
   "items": [
