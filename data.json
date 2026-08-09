@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-08-09T12:09:12.795Z",
+  "savedAt": "2026-08-09T12:09:21.741Z",
   "lists": [
     {
       "id": "a9a102f3-c48f-4376-bfee-e54417017d30",
@@ -96,7 +96,44 @@
         "title",
         "platform",
         "genre",
-        "releaseYear"
+        "releaseYear",
+        "series",
+        "publisher",
+        "developer",
+        "releaseMonth",
+        "subGenre"
+      ],
+      "tiers": [
+        {
+          "id": "sp",
+          "label": "S+",
+          "color": "#ff6b6b"
+        },
+        {
+          "id": "a",
+          "label": "A",
+          "color": "#ffa94d"
+        },
+        {
+          "id": "b",
+          "label": "B",
+          "color": "#ffd43b"
+        },
+        {
+          "id": "c",
+          "label": "C",
+          "color": "#69db7c"
+        },
+        {
+          "id": "d",
+          "label": "D",
+          "color": "#4dabf7"
+        },
+        {
+          "id": "f",
+          "label": "F",
+          "color": "#868e96"
+        }
       ]
     }
   ],
