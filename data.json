@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "savedAt": "2026-08-09T11:18:27.735Z",
+  "lists": [
+    {
+      "id": "mslplgkxa0lrj",
+      "name": "Video Games",
+      "visibleFields": [
+        "title",
+        "platform",
+        "genre",
+        "releaseYear"
+      ]
+    }
+  ],
+  "items": [],
+  "ranked": []
+}
