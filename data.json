@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-08-09T12:10:20.496Z",
+  "savedAt": "2026-08-09T12:10:26.059Z",
   "lists": [
     {
       "id": "a9a102f3-c48f-4376-bfee-e54417017d30",
@@ -44,7 +44,16 @@
           "color": "#868e96"
         }
       ],
-      "tierAssignments": {}
+      "tierAssignments": {
+        "cd3a82ed-556f-4bed-9ba0-56f2ff0ab66b": "sp",
+        "dfea90f3-786a-4907-aad7-8d8b2ae85dc7": "sp",
+        "13837059-f037-4d0c-b962-079464c74aca": "a",
+        "0364f324-3627-489b-9f01-b15a869b287d": "a",
+        "9a6f9387-2561-4cc6-b581-55e2bb09e86e": "b",
+        "e5e02d4c-711b-41ec-bb3f-1ef65a5b57d6": "b",
+        "6913e9d6-4b95-4601-a05c-f66f6bbb2b5c": "c",
+        "d4a91f54-3bd3-4a94-bf44-23015f86b12e": "c"
+      }
     },
     {
       "id": "89968ff7-15a1-47fa-8acb-76b976806987",
