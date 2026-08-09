@@ -520,6 +520,22 @@
     border-color: transparent;
   }
 
+  .sync-status {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    transition: var(--transition);
+    flex-shrink: 0;
+  }
+  .sync-status:hover { border-color: var(--accent); color: var(--accent); }
+  .sync-status.synced  { color: var(--success); border-color: #2a5040; }
+  .sync-status.syncing { color: var(--gold);    border-color: #5a4a10; }
+  .sync-status.error   { color: var(--danger);  border-color: #5a2020; }
+
   /* ── View toggle ── */
   .view-toggle { opacity: 0.5; }
   .view-toggle.active { opacity: 1; border-color: var(--accent); color: var(--accent); }
@@ -820,6 +836,7 @@
     <button class="tab-btn" onclick="switchTab('bank')">Item Bank</button>
     <button class="tab-btn" onclick="switchTab('settings')">Fields &amp; Settings</button>
   </div>
+  <div id="syncStatus" class="sync-status" onclick="openGithubSettings()" title="GitHub sync status">⬤ Local</div>
   <div class="header-actions">
     <button class="btn" onclick="openExport()">Export</button>
     <button class="btn" onclick="openImport()">Import</button>
@@ -1082,6 +1099,26 @@
   </div>
 </div>
 
+<!-- GitHub Settings -->
+<div class="modal-overlay" id="modalGithub">
+  <div class="modal">
+    <div class="modal-title">GitHub Sync</div>
+    <p style="font-size:12px;color:var(--text-dim);margin-bottom:16px;">
+      Your token is stored only in this browser's localStorage — it is never sent anywhere except GitHub's API.
+    </p>
+    <div class="form-group">
+      <label class="form-label">Personal Access Token</label>
+      <input class="form-input" type="password" id="githubTokenInput" placeholder="ghp_xxxxxxxxxxxx">
+    </div>
+    <div id="githubSyncInfo" style="font-size:12px;color:var(--text-dim);margin-top:8px;"></div>
+    <div class="modal-actions">
+      <button class="btn danger" onclick="clearGithubToken()">Clear Token</button>
+      <button class="btn" onclick="closeModal('modalGithub')">Cancel</button>
+      <button class="btn primary" onclick="saveGithubToken()">Save & Sync Now</button>
+    </div>
+  </div>
+</div>
+
 <!-- Restore -->
 <div class="modal-overlay" id="modalRestore">
   <div class="modal">
@@ -1170,7 +1207,7 @@ function dbPut(store, obj) {
   return new Promise((res, rej) => {
     const tx = db.transaction(store, 'readwrite');
     const req = tx.objectStore(store).put(obj);
-    req.onsuccess = () => res();
+    req.onsuccess = () => { queueSync(); res(); };
     req.onerror = () => rej(req.error);
   });
 }
@@ -1197,7 +1234,16 @@ async function loadAll() {
   }
 
   state.activeListId = state.lists[0].id;
-  render();
+
+  // Try GitHub — if successful it will re-render with remote data
+  const loadedFromGithub = await loadFromGithub();
+  if (!loadedFromGithub) {
+    // No token or no file yet — use local IndexedDB data
+    if (!getToken()) setSyncStatus('', '⬤ Local');
+    render();
+  } else {
+    render();
+  }
 }
 
 // ══════════════════════════════════════════════
@@ -2719,6 +2765,177 @@ function renderSettings() {
     </div>
   `).join('');
   document.getElementById('tierSettingsList').innerHTML = tierHtml;
+}
+
+// ══════════════════════════════════════════════
+//  GITHUB SYNC
+// ══════════════════════════════════════════════
+
+const GITHUB_REPO  = 'Rentrail/Ranked-Lists';
+const GITHUB_FILE  = 'data.json';
+const GITHUB_API   = `https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE}`;
+
+let syncFileSha    = null; // GitHub requires the SHA to update an existing file
+let syncPending    = false;
+let syncTimer      = null;
+
+function getToken() {
+  return localStorage.getItem('ranklist_github_token') || '';
+}
+
+function setSyncStatus(state_, msg) {
+  const el = document.getElementById('syncStatus');
+  if (!el) return;
+  el.className = 'sync-status ' + (state_ || '');
+  el.textContent = msg;
+}
+
+function openGithubSettings() {
+  const token = getToken();
+  document.getElementById('githubTokenInput').value = token;
+  document.getElementById('githubSyncInfo').textContent = token
+    ? `Token saved. Last sync: ${localStorage.getItem('ranklist_last_sync') || 'never'}`
+    : 'No token saved yet.';
+  openModal('modalGithub');
+}
+
+function saveGithubToken() {
+  const token = document.getElementById('githubTokenInput').value.trim();
+  if (!token) { toast('Enter a token first'); return; }
+  localStorage.setItem('ranklist_github_token', token);
+  closeModal('modalGithub');
+  syncToGithub(true);
+}
+
+function clearGithubToken() {
+  if (!confirm('Remove GitHub token? Sync will be disabled.')) return;
+  localStorage.removeItem('ranklist_github_token');
+  syncFileSha = null;
+  setSyncStatus('', '⬤ Local');
+  closeModal('modalGithub');
+}
+
+// Called on load — try to pull data from GitHub
+async function loadFromGithub() {
+  const token = getToken();
+  if (!token) return false;
+
+  setSyncStatus('syncing', '↻ Loading…');
+  try {
+    const res = await fetch(GITHUB_API, {
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json',
+      }
+    });
+
+    if (res.status === 404) {
+      // File doesn't exist yet — first run, will create on first save
+      setSyncStatus('synced', '✓ Connected');
+      return false;
+    }
+
+    if (!res.ok) throw new Error(`GitHub API error: ${res.status}`);
+
+    const file = await res.json();
+    syncFileSha = file.sha;
+    const content = JSON.parse(atob(file.content.replace(/\n/g, '')));
+
+    // Load into state and IndexedDB
+    const tx = db.transaction(['lists','items','ranked'], 'readwrite');
+    tx.objectStore('lists').clear();
+    tx.objectStore('items').clear();
+    tx.objectStore('ranked').clear();
+    await new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = rej; });
+
+    for (const list  of (content.lists  || [])) await dbPut('lists',  list);
+    for (const item  of (content.items  || [])) await dbPut('items',  item);
+    for (const entry of (content.ranked || [])) await dbPut('ranked', entry);
+
+    state.lists  = content.lists  || [];
+    state.items  = content.items  || [];
+    state.ranked = content.ranked || [];
+
+    if (state.lists.length === 0) {
+      const defaultList = { id: uid(), name: 'Video Games', visibleFields: [...DEFAULT_VISIBLE] };
+      await dbPut('lists', defaultList);
+      state.lists = [defaultList];
+    }
+
+    state.activeListId = state.lists[0].id;
+    const lastSync = new Date().toLocaleTimeString();
+    localStorage.setItem('ranklist_last_sync', lastSync);
+    setSyncStatus('synced', `✓ Synced ${lastSync}`);
+    return true;
+
+  } catch (err) {
+    console.error('GitHub load error:', err);
+    setSyncStatus('error', '✗ Sync error');
+    return false;
+  }
+}
+
+// Debounced save — waits 2s after last change before pushing
+function queueSync() {
+  const token = getToken();
+  if (!token) return;
+  clearTimeout(syncTimer);
+  setSyncStatus('syncing', '↻ Saving…');
+  syncTimer = setTimeout(() => syncToGithub(false), 2000);
+}
+
+async function syncToGithub(immediate = false) {
+  const token = getToken();
+  if (!token) return;
+  if (syncPending) return;
+  syncPending = true;
+  setSyncStatus('syncing', '↻ Syncing…');
+
+  try {
+    const payload = {
+      version: 1,
+      savedAt: new Date().toISOString(),
+      lists:   state.lists,
+      items:   state.items,
+      ranked:  state.ranked,
+    };
+
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(payload, null, 2))));
+
+    const body = {
+      message: `Auto-sync ${new Date().toISOString()}`,
+      content,
+    };
+    if (syncFileSha) body.sha = syncFileSha;
+
+    const res = await fetch(GITHUB_API, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || res.status);
+    }
+
+    const result = await res.json();
+    syncFileSha = result.content.sha;
+    const lastSync = new Date().toLocaleTimeString();
+    localStorage.setItem('ranklist_last_sync', lastSync);
+    setSyncStatus('synced', `✓ Synced ${lastSync}`);
+
+  } catch (err) {
+    console.error('GitHub sync error:', err);
+    setSyncStatus('error', `✗ Sync failed`);
+    toast('Sync failed — check your token');
+  } finally {
+    syncPending = false;
+  }
 }
 
 // ══════════════════════════════════════════════
