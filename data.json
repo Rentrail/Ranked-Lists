@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-08-11T01:34:11.723Z",
+  "savedAt": "2026-08-11T01:34:16.147Z",
   "lists": [
     {
       "id": "a9a102f3-c48f-4376-bfee-e54417017d30",
@@ -101,7 +101,8 @@
           "color": "#868e96"
         }
       ],
-      "tierAssignments": {}
+      "tierAssignments": {},
+      "lastUsed": 1786412054140
     },
     {
       "id": "32c4409a-a7fb-46b2-b245-5ece51020abc",
