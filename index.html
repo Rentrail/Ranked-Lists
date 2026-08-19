@@ -732,6 +732,34 @@
   .sync-status.syncing { color: var(--gold);    border-color: #5a4a10; }
   .sync-status.error   { color: var(--danger);  border-color: #5a2020; }
 
+  .field-chip.tag {
+    background: var(--accent-dim);
+    border-color: var(--accent-dim);
+    color: var(--accent);
+  }
+
+  .custom-field-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .custom-field-row .cf-name { flex: 1; }
+  .custom-field-row .cf-type {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
   /* ── View toggle ── */
   .view-toggle { opacity: 0.5; }
   .view-toggle.active { opacity: 1; border-color: var(--accent); color: var(--accent); }
@@ -832,6 +860,93 @@
     padding: 0;
     background: transparent;
   }
+
+  /* ── Bottom sheet ── */
+  .sheet-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 400;
+  }
+  .sheet-overlay.open { display: block; }
+
+  .bottom-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-radius: 16px 16px 0 0;
+    z-index: 401;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .bottom-sheet.open { transform: translateY(0); }
+
+  .sheet-handle {
+    width: 40px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 10px auto 0;
+    flex-shrink: 0;
+  }
+
+  .sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px 8px;
+    flex-shrink: 0;
+  }
+
+  .sheet-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .sheet-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: var(--radius);
+    line-height: 1;
+  }
+  .sheet-close:hover { color: var(--text); background: var(--surface2); }
+
+  .sheet-body {
+    overflow-y: auto;
+    padding: 8px 20px 32px;
+    flex: 1;
+  }
+
+  .sheet-input {
+    font-size: 16px; /* Prevents iOS zoom on focus */
+    padding: 12px 14px;
+  }
+
+  .sheet-more-btn {
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--text-dim);
+    font-size: 13px;
+    padding: 8px 14px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    width: 100%;
+    margin: 4px 0 12px;
+    transition: var(--transition);
+  }
+  .sheet-more-btn:hover { border-color: var(--accent); color: var(--accent); }
 
   /* ── Pagination bar ── */
     display: flex;
@@ -1051,10 +1166,6 @@
       <span class="hi-arrow">›</span>
     </button>
     <div class="hamburger-divider"></div>
-    <button class="hamburger-item" onclick="closeHamburger();switchTab('settings')">
-      <span class="hi-icon">⚙</span> Fields &amp; Settings
-    </button>
-    <div class="hamburger-divider"></div>
     <button class="hamburger-item" onclick="openSubPanel('data')">
       <span class="hi-icon">💾</span> Data
       <span class="hi-arrow">›</span>
@@ -1068,6 +1179,48 @@
       <span class="sub-panel-title">Lists</span>
     </div>
     <div class="sub-panel-content" id="subPanelListsContent"></div>
+  </div>
+
+  <!-- Fields slide-in panel -->
+  <div class="sub-panel" id="subPanelFields">
+    <div class="sub-panel-header">
+      <button class="sub-panel-back" onclick="closeFieldsPanel()">‹</button>
+      <span class="sub-panel-title" id="fieldsPanelTitle">Fields & Tiers</span>
+      <button class="btn small primary" style="margin-left:auto" onclick="closeFieldsPanel()">Done</button>
+    </div>
+    <div class="sub-panel-content">
+      <!-- List name and description -->
+      <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+        <div class="form-group">
+          <label class="form-label">List Name</label>
+          <div style="display:flex;gap:8px;">
+            <input class="form-input" type="text" id="fieldsPanelListName" placeholder="List name" style="flex:1">
+            <button class="btn small" onclick="saveListName()">Rename</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="form-input" id="fieldsPanelListDesc" placeholder="What is this list for?" rows="2"
+            style="resize:vertical;font-family:var(--font-body)"
+            onblur="saveListDescription()"></textarea>
+        </div>
+      </div>
+      <p style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Toggle which fields appear in the list view and export.</p>
+      <div class="field-toggle-grid" id="fieldsPanelToggles"></div>
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">Tiers</div>
+        <p style="font-size:12px;color:var(--text-dim);margin-bottom:10px;">Edit tier names and colours.</p>
+        <div id="fieldsPanelTiers"></div>
+        <button class="btn small" style="margin-top:8px;width:100%" onclick="addTierFromPanel()">+ Add Tier</button>
+      </div>
+      <!-- Custom fields section -->
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">Custom Fields</div>
+        <p style="font-size:12px;color:var(--text-dim);margin-bottom:10px;">Global fields available to all lists. Toggle visibility per list.</p>
+        <div id="fieldsPanelCustom"></div>
+        <button class="btn small" style="margin-top:8px;width:100%" onclick="openCustomFieldModal()">+ Add Custom Field</button>
+      </div>
+    </div>
   </div>
 
   <!-- Data sub-panel -->
@@ -1099,7 +1252,7 @@
   <button class="hamburger-btn" onclick="openHamburger()" title="Menu">☰</button>
   <div class="app-title">RANK<span>LIST</span></div>
   <div class="header-actions">
-    <button class="btn small" onclick="openAddFromBank()">+ From Bank</button>
+    <button class="btn small" onclick="openFieldsPanel()" title="Edit visible fields">Fields</button>
     <button class="btn small primary" onclick="openAddItem()">+ Add Item</button>
   </div>
 </header>
@@ -1236,14 +1389,60 @@
 <!-- ══════════════════ MODALS ══════════════════ -->
 
 <!-- Add / Edit Item -->
-<div class="modal-overlay" id="modalItem">
-  <div class="modal">
-    <div class="modal-title" id="modalItemTitle">Add Item to Bank</div>
-    <div id="itemFormFields"></div>
-    <div class="modal-actions">
-      <button class="btn" onclick="closeModal('modalItem')">Cancel</button>
-      <button class="btn primary" onclick="saveItem()">Save</button>
+<!-- Add Item Bottom Sheet -->
+<div class="sheet-overlay" id="sheetItemOverlay" onclick="sheetOverlayTap()"></div>
+<div class="bottom-sheet" id="sheetItem">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <span class="sheet-title">Add Item</span>
+    <button class="sheet-close" onclick="closeSheetItem()">✕</button>
+  </div>
+  <div class="sheet-body">
+    <div class="form-group">
+      <label class="form-label">Title *</label>
+      <input class="form-input sheet-input" type="text" id="sheetTitle" placeholder="e.g. Elden Ring" autocomplete="off">
     </div>
+    <div class="form-group">
+      <label class="form-label">Platform</label>
+      <input class="form-input sheet-input" type="text" id="sheetPlatform" placeholder="e.g. PS5">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Release Year</label>
+      <input class="form-input sheet-input" type="number" id="sheetReleaseYear" placeholder="e.g. 2022">
+    </div>
+
+    <!-- More details expander -->
+    <button class="sheet-more-btn" id="sheetMoreBtn" onclick="toggleSheetMore()">+ More Details</button>
+    <div id="sheetMoreFields" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Genre</label>
+        <input class="form-input sheet-input" type="text" id="sheetGenre" placeholder="Genre">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sub-Genre</label>
+        <input class="form-input sheet-input" type="text" id="sheetSubGenre" placeholder="Sub-Genre">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Series</label>
+        <input class="form-input sheet-input" type="text" id="sheetSeries" placeholder="Series">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Developer</label>
+        <input class="form-input sheet-input" type="text" id="sheetDeveloper" placeholder="Developer">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Publisher</label>
+        <input class="form-input sheet-input" type="text" id="sheetPublisher" placeholder="Publisher">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Release Month</label>
+        <input class="form-input sheet-input" type="text" id="sheetReleaseMonth" placeholder="e.g. Jan">
+      </div>
+      <!-- Custom fields injected here -->
+      <div id="sheetCustomFields"></div>
+    </div>
+
+    <button class="btn primary" style="width:100%;margin-top:8px;padding:12px;" onclick="saveSheetItem()">Save to Bank</button>
   </div>
 </div>
 
@@ -1267,7 +1466,11 @@
       <label class="form-label">List Name</label>
       <input class="form-input" type="text" id="newListName" placeholder="e.g. Video Games">
     </div>
-    <p style="font-size:12px;color:var(--text-dim);margin-top:4px;">All new lists start with the Video Games field set. You can hide fields you don't need in Fields &amp; Settings.</p>
+    <div class="form-group">
+      <label class="form-label">Description <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
+      <textarea class="form-input" id="newListDesc" placeholder="What is this list for?" rows="2" style="resize:vertical;font-family:var(--font-body)"></textarea>
+    </div>
+    <p style="font-size:12px;color:var(--text-dim);margin-top:4px;">All new lists start with the Video Games field set. You can hide fields you don't need in Fields.</p>
     <div class="modal-actions">
       <button class="btn" onclick="closeModal('modalNewList')">Cancel</button>
       <button class="btn primary" onclick="createList()">Create</button>
@@ -1401,6 +1604,42 @@
   </div>
 </div>
 
+<!-- Add Custom Field -->
+<div class="modal-overlay" id="modalCustomField">
+  <div class="modal" style="width:380px">
+    <div class="modal-title">Add Custom Field</div>
+    <div class="form-group">
+      <label class="form-label">Field Name</label>
+      <input class="form-input" type="text" id="customFieldName" placeholder="e.g. Sound Reference">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Field Type</label>
+      <select class="form-input" id="customFieldType">
+        <option value="text">Text</option>
+        <option value="tags">Tags (comma-separated)</option>
+        <option value="number">Number</option>
+      </select>
+    </div>
+    <p style="font-size:12px;color:var(--text-dim);margin-top:4px;">Custom fields are global — available to all lists. Hidden by default until you enable them per list.</p>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modalCustomField')">Cancel</button>
+      <button class="btn primary" onclick="saveCustomField()">Add Field</button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Confirm Modal -->
+<div class="modal-overlay" id="modalConfirm">
+  <div class="modal" style="width:400px">
+    <div class="modal-title" id="confirmTitle">Are you sure?</div>
+    <p id="confirmMessage" style="font-size:13px;color:var(--text-dim);line-height:1.6;margin-bottom:4px;"></p>
+    <div class="modal-actions">
+      <button class="btn" id="confirmCancelBtn" onclick="resolveConfirm(false)">Cancel</button>
+      <button class="btn primary" id="confirmOkBtn" onclick="resolveConfirm(true)">Confirm</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -1429,9 +1668,10 @@ const DEFAULT_VISIBLE = ['title','platform','genre','releaseYear'];
 
 let db;
 let state = {
-  lists: [],          // { id, name, visibleFields: [] }
-  items: [],          // { id, listId, ...fields }
-  ranked: [],         // { id, itemId, listId, rank: null|number }
+  lists:        [],   // { id, name, visibleFields: [] }
+  items:        [],   // { id, listId, ...fields }
+  ranked:       [],   // { id, itemId, listId, rank: null|number }
+  customFields: [],   // { id, name, type: 'text'|'tags' } — global
   activeListId: null,
   activeTab: 'ranked',
 };
@@ -1445,12 +1685,13 @@ let editingRankedId = null;
 // ══════════════════════════════════════════════
 
 function initDB() {
-  const req = indexedDB.open('RankList', 2);
+  const req = indexedDB.open('RankList', 3);
   req.onupgradeneeded = e => {
     const d = e.target.result;
-    if (!d.objectStoreNames.contains('lists'))  d.createObjectStore('lists',  { keyPath: 'id' });
-    if (!d.objectStoreNames.contains('items'))  d.createObjectStore('items',  { keyPath: 'id' });
-    if (!d.objectStoreNames.contains('ranked')) d.createObjectStore('ranked', { keyPath: 'id' });
+    if (!d.objectStoreNames.contains('lists'))        d.createObjectStore('lists',        { keyPath: 'id' });
+    if (!d.objectStoreNames.contains('items'))        d.createObjectStore('items',        { keyPath: 'id' });
+    if (!d.objectStoreNames.contains('ranked'))       d.createObjectStore('ranked',       { keyPath: 'id' });
+    if (!d.objectStoreNames.contains('customFields')) d.createObjectStore('customFields', { keyPath: 'id' });
   };
   req.onsuccess = e => {
     db = e.target.result;
@@ -1487,9 +1728,10 @@ function dbDelete(store, id) {
 }
 
 async function loadAll() {
-  state.lists  = await dbGetAll('lists');
-  state.items  = await dbGetAll('items');
-  state.ranked = await dbGetAll('ranked');
+  state.lists        = await dbGetAll('lists');
+  state.items        = await dbGetAll('items');
+  state.ranked       = await dbGetAll('ranked');
+  state.customFields = await dbGetAll('customFields');
 
   // Seed default list if none
   if (state.lists.length === 0) {
@@ -1565,8 +1807,9 @@ function rankedForList(listId) {
 
 function visibleFields() {
   const list = activeList();
-  if (!list) return FIELDS.filter(f => DEFAULT_VISIBLE.includes(f.key));
-  return FIELDS.filter(f => list.visibleFields.includes(f.key));
+  const all = allFields();
+  if (!list) return all.filter(f => DEFAULT_VISIBLE.includes(f.key));
+  return all.filter(f => list.visibleFields.includes(f.key));
 }
 
 // ══════════════════════════════════════════════
@@ -1611,8 +1854,19 @@ function renderRanked(searchVal = '', filterField = '', filterVal = '') {
     const item = getItem(r.itemId);
     if (!item) return false;
     const matchSearch = !searchVal || item.title.toLowerCase().includes(searchVal.toLowerCase()) ||
-      FIELDS.some(f => String(item[f.key] || '').toLowerCase().includes(searchVal.toLowerCase()));
-    const matchFilter = !filterField || !filterVal || String(item[filterField] || '') === filterVal;
+      allFields().some(f => String(item[f.key] || '').toLowerCase().includes(searchVal.toLowerCase()));
+    let matchFilter = true;
+    if (filterField && filterVal) {
+      const fieldDef = allFields().find(f => f.key === filterField);
+      const itemVal = String(item[filterField] || '');
+      if (fieldDef && fieldDef.type === 'tags') {
+        // ALL selected tags must be present
+        const itemTags = itemVal.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+        matchFilter = itemTags.includes(filterVal.toLowerCase());
+      } else {
+        matchFilter = itemVal === filterVal;
+      }
+    }
     return matchSearch && matchFilter;
   });
 
@@ -1648,6 +1902,10 @@ function renderItemRow(item, ranked, isUnranked, vf) {
   const chips = vf.map(f => {
     const val = item[f.key];
     if (!val) return '';
+    if (f.type === 'tags') {
+      return val.split(',').map(t => t.trim()).filter(Boolean)
+        .map(t => `<span class="field-chip tag">${esc(t)}</span>`).join('');
+    }
     const cls = f.key === 'platform' ? 'platform' : f.key === 'genre' ? 'genre' : '';
     return `<span class="field-chip ${cls}">${esc(val)}</span>`;
   }).join('');
@@ -1717,8 +1975,18 @@ function filterBank(searchVal = '') {
   const items = state.items; // universal bank
 
   bankFiltered = items.filter(item => {
-    const matchSearch = !searchVal || FIELDS.some(f => String(item[f.key]||'').toLowerCase().includes(searchVal.toLowerCase()));
-    const matchFilter = !filterField || !filterVal || String(item[filterField]||'') === filterVal;
+    const matchSearch = !searchVal || allFields().some(f => String(item[f.key]||'').toLowerCase().includes(searchVal.toLowerCase()));
+    let matchFilter = true;
+    if (filterField && filterVal) {
+      const fieldDef = allFields().find(f => f.key === filterField);
+      const itemVal = String(item[filterField] || '');
+      if (fieldDef && fieldDef.type === 'tags') {
+        const itemTags = itemVal.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+        matchFilter = itemTags.includes(filterVal.toLowerCase());
+      } else {
+        matchFilter = itemVal === filterVal;
+      }
+    }
     return matchSearch && matchFilter;
   });
 
@@ -1744,13 +2012,14 @@ function renderBankPage() {
 
   const pageItems = bankFiltered.slice(bankPage * bankPageSize, (bankPage + 1) * bankPageSize);
 
-  const colHeaders = FIELDS.map(f =>
+  const allF = allFields();
+  const colHeaders = allF.map(f =>
     `<th style="min-width:${f.key==='title'?260:120}px">${esc(f.label)}</th>`
   ).join('') + `<th style="width:110px">${esc(list.name)}</th><th style="width:60px"></th>`;
 
   const rows = pageItems.map(item => {
     const inList = rankedIds.has(item.id);
-    const cells = FIELDS.map(f => {
+    const cells = allF.map(f => {
       const val = esc(item[f.key] || '');
       return `<td>
         <input class="bank-cell"
@@ -1777,7 +2046,7 @@ function renderBankPage() {
     </tr>`;
   }).join('');
 
-  const newCells = FIELDS.map(f =>
+  const newCells = allF.map(f =>
     `<td><input class="bank-cell new-row-cell" data-field="${f.key}"
                placeholder="${esc(f.label)}"
                type="${f.type === 'number' ? 'number' : 'text'}"
@@ -1934,8 +2203,8 @@ async function commitNewRow() {
 function updateFilterDropdowns() {
   const list = activeList();
   if (!list) return;
-  const items = state.items; // universal bank — all items
-  const vf = visibleFields().filter(f => f.key !== 'title');
+  const items = state.items;
+  const vf = allFields().filter(f => f.key !== 'title');
 
   ['rankFilterField','bankFilterField','exportFilterField'].forEach(id => {
     const sel = document.getElementById(id);
@@ -1956,8 +2225,20 @@ function updateValueDropdown(fieldSelId, valueSelId, items) {
   if (!fieldSel || !valueSel) return;
   const field = fieldSel.value;
   if (!field) { valueSel.innerHTML = '<option value="">Any</option>'; return; }
-  const vals = [...new Set(items.map(i => i[field]).filter(Boolean))].sort();
-  valueSel.innerHTML = '<option value="">Any</option>' + vals.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
+
+  const fieldDef = allFields().find(f => f.key === field);
+  let vals;
+  if (fieldDef && fieldDef.type === 'tags') {
+    // Expand comma-separated tags into individual unique values
+    vals = [...new Set(
+      items.flatMap(i => (i[field] || '').split(',').map(t => t.trim()).filter(Boolean))
+    )].sort();
+  } else {
+    vals = [...new Set(items.map(i => i[field]).filter(Boolean))].sort();
+  }
+
+  valueSel.innerHTML = '<option value="">Any</option>' +
+    vals.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
 }
 
 // ══════════════════════════════════════════════
@@ -2039,7 +2320,6 @@ function renderListsSubPanel() {
 }
 
 async function selectListFromPanel(id) {
-  // Track last used time
   const list = state.lists.find(l => l.id === id);
   if (list) {
     list.lastUsed = Date.now();
@@ -2047,7 +2327,98 @@ async function selectListFromPanel(id) {
   }
   state.activeListId = id;
   closeHamburger();
+  switchTab('ranked');
   render();
+}
+
+function openFieldsPanel() {
+  const list = activeList();
+  if (!list) return;
+  if (!list.tiers) list.tiers = DEFAULT_TIERS.map(t => ({...t}));
+
+  document.getElementById('fieldsPanelTitle').textContent = list.name + ' — Fields & Tiers';
+  document.getElementById('fieldsPanelListName').value = list.name;
+  document.getElementById('fieldsPanelListDesc').value = list.description || '';
+
+  renderFieldsPanelToggles();
+  renderFieldsPanelTiers();
+  renderFieldsPanelCustom();
+
+  document.getElementById('hamburgerOverlay').classList.add('open');
+  document.getElementById('hamburgerPanel').classList.add('open');
+  document.querySelectorAll('.sub-panel').forEach(p => p.classList.remove('open'));
+  document.getElementById('subPanelFields').classList.add('open');
+}
+
+async function saveListName() {
+  const list = activeList();
+  if (!list) return;
+  const name = document.getElementById('fieldsPanelListName').value.trim();
+  if (!name) { toast('Name cannot be empty'); return; }
+  list.name = name;
+  await dbPut('lists', list);
+  document.getElementById('fieldsPanelTitle').textContent = name + ' — Fields & Tiers';
+  toast('List renamed');
+  renderSidebar();
+  // Update ranked panel title if visible
+  const titleEl = document.getElementById('rankedPanelTitle');
+  if (titleEl) titleEl.textContent = name;
+}
+
+async function saveListDescription() {
+  const list = activeList();
+  if (!list) return;
+  list.description = document.getElementById('fieldsPanelListDesc').value.trim();
+  await dbPut('lists', list);
+}
+
+function renderFieldsPanelToggles() {
+  const list = activeList();
+  if (!list) return;
+  const html = allFields().filter(f => f.key !== 'title').map(f => {
+    const on = list.visibleFields.includes(f.key);
+    return `<div class="field-toggle ${on ? 'on' : ''}" onclick="toggleFieldFromPanel('${f.key}')">
+      ${esc(f.label)}${f.custom ? ' <span style="font-size:10px;color:var(--text-muted)">(custom)</span>' : ''}
+    </div>`;
+  }).join('');
+  document.getElementById('fieldsPanelToggles').innerHTML = html;
+}
+
+function renderFieldsPanelTiers() {
+  const list = activeList();
+  if (!list || !list.tiers) return;
+  const html = list.tiers.map(t => `
+    <div class="tier-setting-row">
+      <input type="color" class="tier-color-swatch" value="${t.color}"
+             onchange="updateTierColor('${t.id}', this.value)">
+      <input class="form-input" style="flex:1" type="text" value="${esc(t.label)}"
+             onchange="updateTierLabel('${t.id}', this.value)"
+             placeholder="Tier name">
+      <button class="btn small danger" onclick="deleteTier('${t.id}')">✕</button>
+    </div>
+  `).join('');
+  const el = document.getElementById('fieldsPanelTiers');
+  if (el) el.innerHTML = html;
+}
+
+async function addTierFromPanel() {
+  await addTier();
+  renderFieldsPanelTiers();
+}
+
+function closeFieldsPanel() {
+  closeHamburger();
+}
+
+async function toggleFieldFromPanel(key) {
+  const list = activeList();
+  if (!list) return;
+  const idx = list.visibleFields.indexOf(key);
+  if (idx >= 0) list.visibleFields.splice(idx, 1);
+  else list.visibleFields.push(key);
+  await dbPut('lists', list);
+  renderFieldsPanelToggles();
+  updateFilterDropdowns();
 }
 
 
@@ -2056,16 +2427,106 @@ async function selectListFromPanel(id) {
 // ══════════════════════════════════════════════
 
 function openAddItem() {
-  editingItemId = null;
-  document.getElementById('modalItemTitle').textContent = 'Add Item to Bank';
-  buildItemForm('itemFormFields', null);
-  openModal('modalItem');
-  setTimeout(() => document.querySelector('#itemFormFields input')?.focus(), 50);
+  // Clear standard fields
+  ['sheetTitle','sheetPlatform','sheetReleaseYear','sheetGenre','sheetSubGenre',
+   'sheetSeries','sheetDeveloper','sheetPublisher','sheetReleaseMonth'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+
+  // Render and clear custom fields
+  renderSheetCustomFields(null);
+
+  document.getElementById('sheetMoreFields').style.display = 'none';
+  document.getElementById('sheetMoreBtn').textContent = '+ More Details';
+
+  document.getElementById('sheetItemOverlay').classList.add('open');
+  document.getElementById('sheetItem').classList.add('open');
+  setTimeout(() => document.getElementById('sheetTitle')?.focus(), 350);
+}
+
+function renderSheetCustomFields(item) {
+  const container = document.getElementById('sheetCustomFields');
+  if (!container) return;
+  if (state.customFields.length === 0) { container.innerHTML = ''; return; }
+
+  const html = state.customFields.map(cf => {
+    const key = 'cf_' + cf.id;
+    const val = item ? (item[key] || '') : '';
+    const hint = cf.type === 'tags' ? 'Comma-separated tags' : cf.name;
+    return `<div class="form-group">
+      <label class="form-label">${esc(cf.name)}${cf.type === 'tags' ? ' <span style="color:var(--text-muted);font-weight:400;font-size:10px">TAGS</span>' : ''}</label>
+      <input class="form-input sheet-input" type="text"
+             id="sheet_${key}"
+             value="${esc(val)}"
+             placeholder="${esc(hint)}">
+    </div>`;
+  }).join('');
+
+  container.innerHTML = html;
+}
+
+function closeSheetItem() {
+  document.getElementById('sheetItemOverlay').classList.remove('open');
+  document.getElementById('sheetItem').classList.remove('open');
+}
+
+async function sheetOverlayTap() {
+  const title = document.getElementById('sheetTitle')?.value.trim();
+  if (title) {
+    const ok = await showConfirm(
+      `You have "${title}" entered. Discard this item?`,
+      'Discard Item?', 'Discard', true
+    );
+    if (!ok) return;
+  }
+  closeSheetItem();
+}
+
+function toggleSheetMore() {
+  const more = document.getElementById('sheetMoreFields');
+  const btn  = document.getElementById('sheetMoreBtn');
+  const open = more.style.display !== 'none';
+  more.style.display = open ? 'none' : 'block';
+  btn.textContent = open ? '+ More Details' : '− Less Details';
+  if (!open) renderSheetCustomFields(null);
+}
+
+async function saveSheetItem() {
+  const title = document.getElementById('sheetTitle')?.value.trim();
+  if (!title) { toast('Title is required'); return; }
+
+  const item = {
+    id: uid(),
+    listId: state.activeListId,
+    title,
+    platform:     document.getElementById('sheetPlatform')?.value.trim()     || '',
+    releaseYear:  document.getElementById('sheetReleaseYear')?.value.trim()  || '',
+    genre:        document.getElementById('sheetGenre')?.value.trim()        || '',
+    subGenre:     document.getElementById('sheetSubGenre')?.value.trim()     || '',
+    series:       document.getElementById('sheetSeries')?.value.trim()       || '',
+    developer:    document.getElementById('sheetDeveloper')?.value.trim()    || '',
+    publisher:    document.getElementById('sheetPublisher')?.value.trim()    || '',
+    releaseMonth: document.getElementById('sheetReleaseMonth')?.value.trim() || '',
+  };
+
+  // Save custom field values
+  state.customFields.forEach(cf => {
+    const key = 'cf_' + cf.id;
+    const el = document.getElementById('sheet_' + key);
+    item[key] = el ? el.value.trim() : '';
+  });
+
+  await dbPut('items', item);
+  state.items.push(item);
+  closeSheetItem();
+  toast(`"${title}" added to bank`);
+  if (state.activeTab === 'bank') filterBank(document.getElementById('bankSearch')?.value || '');
 }
 
 function buildItemForm(containerId, item) {
-  const html = FIELDS.map(f => `
-    <div class="form-group ${f.key === 'title' || f.key === 'platform' || f.key === 'genre' ? '' : ''}">
+  const standardHtml = FIELDS.map(f => `
+    <div class="form-group">
       <label class="form-label">${esc(f.label)}${f.required ? ' *' : ''}</label>
       <input class="form-input" type="${f.type === 'number' ? 'number' : 'text'}"
              id="field_${f.key}"
@@ -2074,28 +2535,26 @@ function buildItemForm(containerId, item) {
              ${f.required ? 'required' : ''}>
     </div>
   `).join('');
-  document.getElementById(containerId).innerHTML = html;
-}
 
-async function saveItem() {
-  const title = document.getElementById('field_title').value.trim();
-  if (!title) { toast('Title is required'); return; }
+  const customHtml = state.customFields.length === 0 ? '' : `
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">Custom Fields</div>
+      ${state.customFields.map(cf => {
+        const key = 'cf_' + cf.id;
+        const val = item ? (item[key] || '') : '';
+        const hint = cf.type === 'tags' ? 'Comma-separated tags' : cf.name;
+        return `<div class="form-group">
+          <label class="form-label">${esc(cf.name)}${cf.type === 'tags' ? ' <span style="color:var(--text-muted);font-weight:400;font-size:10px">TAGS</span>' : ''}</label>
+          <input class="form-input" type="text"
+                 id="field_${key}"
+                 value="${esc(val)}"
+                 placeholder="${esc(hint)}">
+        </div>`;
+      }).join('')}
+    </div>
+  `;
 
-  const item = { id: editingItemId || uid(), listId: state.activeListId };
-  FIELDS.forEach(f => { item[f.key] = document.getElementById('field_' + f.key).value.trim(); });
-
-  await dbPut('items', item);
-  if (editingItemId) {
-    const idx = state.items.findIndex(i => i.id === editingItemId);
-    if (idx >= 0) state.items[idx] = item; else state.items.push(item);
-  } else {
-    state.items.push(item);
-  }
-
-  closeModal('modalItem');
-  toast(editingItemId ? 'Item updated' : 'Item added to bank');
-  editingItemId = null;
-  render();
+  document.getElementById(containerId).innerHTML = standardHtml + customHtml;
 }
 
 // ══════════════════════════════════════════════
@@ -2111,14 +2570,22 @@ function openEditItem(itemId) {
 }
 
 async function saveEdit() {
-  const title = document.getElementById('field_title') ? document.getElementById('field_title').value.trim() : '';
-  // Use edit form fields
   const item = state.items.find(i => i.id === editingItemId);
   if (!item) return;
+
+  // Save standard fields
   FIELDS.forEach(f => {
     const el = document.getElementById('field_' + f.key);
     if (el) item[f.key] = el.value.trim();
   });
+
+  // Save custom fields
+  state.customFields.forEach(cf => {
+    const key = 'cf_' + cf.id;
+    const el = document.getElementById('field_' + key);
+    if (el) item[key] = el.value.trim();
+  });
+
   await dbPut('items', item);
   closeModal('modalEdit');
   toast('Item updated');
@@ -2141,10 +2608,12 @@ async function deleteItem(itemId) {
       return list ? list.name : 'Unknown';
     });
     const unique = [...new Set(listNames)];
-    const msg = `This item is in ${unique.length === 1 ? 'the list' : 'these lists'}: ${unique.join(', ')}.\n\nDelete it from the bank and all lists?`;
-    if (!confirm(msg)) return;
+    const msg = `This item appears in: ${unique.join(', ')}. Deleting it will remove it from the bank and all lists.`;
+    const ok = await showConfirm(msg, 'Delete Item', 'Delete', true);
+    if (!ok) return;
   } else {
-    if (!confirm('Delete this item from the bank?')) return;
+    const ok = await showConfirm('Remove this item from the bank?', 'Delete Item', 'Delete', true);
+    if (!ok) return;
   }
 
   await dbDelete('items', itemId);
@@ -2468,13 +2937,16 @@ async function toggleField(key) {
 
 function openNewList() {
   document.getElementById('newListName').value = '';
+  document.getElementById('newListDesc').value = '';
   openModal('modalNewList');
+  setTimeout(() => document.getElementById('newListName')?.focus(), 50);
 }
 
 async function createList() {
   const name = document.getElementById('newListName').value.trim();
   if (!name) { toast('Name required'); return; }
-  const newList = { id: uid(), name, visibleFields: [...DEFAULT_VISIBLE] };
+  const description = document.getElementById('newListDesc').value.trim();
+  const newList = { id: uid(), name, description, visibleFields: [...DEFAULT_VISIBLE], lastUsed: Date.now() };
   await dbPut('lists', newList);
   state.lists.push(newList);
   state.activeListId = newList.id;
@@ -2523,11 +2995,11 @@ function buildExport() {
   const filterVal   = document.getElementById('exportFilterValue').value;
   const rankedOnly  = document.getElementById('exportRankedOnly').checked;
 
-  // Visible fields for the selected list
-  const vf = FIELDS.filter(f => list.visibleFields.includes(f.key));
+  // Visible fields for the selected list (including custom)
+  const vf = allFields().filter(f => list.visibleFields.includes(f.key));
 
   // All items and ranked entries for this list
-  const items  = state.items.filter(i => i.listId === list.id);
+  const items  = state.items;
   const ranked = state.ranked
     .filter(r => r.listId === list.id)
     .filter(r => !rankedOnly || r.rank !== null)
@@ -2586,7 +3058,7 @@ function buildExport() {
 }
 
 function updateExportFieldDropdown(list, items, currentField, currentVal) {
-  const vf = FIELDS.filter(f => list.visibleFields.includes(f.key) && f.key !== 'title');
+  const vf = allFields().filter(f => list.visibleFields.includes(f.key) && f.key !== 'title');
   const fieldSel = document.getElementById('exportFilterField');
   fieldSel.innerHTML = `<option value="">All fields</option>` +
     vf.map(f => `<option value="${f.key}" ${f.key === currentField ? 'selected' : ''}>${esc(f.label)}</option>`).join('');
@@ -2778,6 +3250,106 @@ document.getElementById('exportFilterField').addEventListener('change', function
   updateValueDropdown('exportFilterField','exportFilterValue', itemsForList(state.activeListId));
   buildExport();
 });
+
+// ══════════════════════════════════════════════
+//  CUSTOM FIELDS
+// ══════════════════════════════════════════════
+
+function allFields() {
+  // Base fields + custom fields merged
+  return [
+    ...FIELDS,
+    ...state.customFields.map(cf => ({
+      key:      'cf_' + cf.id,
+      label:    cf.name,
+      type:     cf.type,
+      custom:   true,
+      cfId:     cf.id,
+    }))
+  ];
+}
+
+function openCustomFieldModal() {
+  document.getElementById('customFieldName').value = '';
+  document.getElementById('customFieldType').value = 'text';
+  openModal('modalCustomField');
+  setTimeout(() => document.getElementById('customFieldName')?.focus(), 50);
+}
+
+async function saveCustomField() {
+  const name = document.getElementById('customFieldName').value.trim();
+  if (!name) { toast('Field name required'); return; }
+  const type = document.getElementById('customFieldType').value;
+
+  const cf = { id: uid(), name, type };
+  await dbPut('customFields', cf);
+  state.customFields.push(cf);
+
+  closeModal('modalCustomField');
+  toast(`"${name}" field added`);
+  renderFieldsPanelCustom();
+  renderFieldsPanelToggles();
+}
+
+async function deleteCustomField(cfId) {
+  const cf = state.customFields.find(c => c.id === cfId);
+  if (!cf) return;
+  const ok = await showConfirm(
+    `Delete the "${cf.name}" field? This will remove it and all its data from every item.`,
+    'Delete Custom Field', 'Delete', true
+  );
+  if (!ok) return;
+
+  const key = 'cf_' + cfId;
+
+  // Remove from all items
+  for (const item of state.items) {
+    if (key in item) {
+      delete item[key];
+      await dbPut('items', item);
+    }
+  }
+
+  // Remove from all list visibleFields
+  for (const list of state.lists) {
+    const idx = list.visibleFields.indexOf(key);
+    if (idx >= 0) {
+      list.visibleFields.splice(idx, 1);
+      await dbPut('lists', list);
+    }
+  }
+
+  await dbDelete('customFields', cfId);
+  state.customFields = state.customFields.filter(c => c.id !== cfId);
+  toast(`"${cf.name}" field deleted`);
+  renderFieldsPanelCustom();
+  renderFieldsPanelToggles();
+}
+
+function renderFieldsPanelCustom() {
+  const el = document.getElementById('fieldsPanelCustom');
+  if (!el) return;
+
+  if (state.customFields.length === 0) {
+    el.innerHTML = '<p style="font-size:12px;color:var(--text-muted);padding:8px 0">No custom fields yet.</p>';
+    return;
+  }
+
+  const list = activeList();
+  el.innerHTML = state.customFields.map(cf => {
+    const key = 'cf_' + cf.id;
+    const visible = list && list.visibleFields.includes(key);
+    return `<div class="custom-field-row">
+      <span class="cf-name">${esc(cf.name)}</span>
+      <span class="cf-type">${cf.type}</span>
+      <div class="field-toggle ${visible ? 'on' : ''}" style="padding:4px 8px;font-size:11px"
+           onclick="toggleFieldFromPanel('${key}')">
+        ${visible ? 'Visible' : 'Hidden'}
+      </div>
+      <button class="btn small danger" onclick="deleteCustomField('${cf.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
 
 // ══════════════════════════════════════════════
 //  TIERS
@@ -3006,7 +3578,11 @@ async function autoAssignTiers() {
   const tiers = getTiers();
   const ranked = rankedForList(list.id).filter(r => r.rank !== null).sort((a,b) => a.rank - b.rank);
   if (!ranked.length) { toast('No ranked items to assign'); return; }
-  if (!confirm(`Auto-assign ${ranked.length} items across ${tiers.length} tiers? This will overwrite existing tier assignments.`)) return;
+  const ok = await showConfirm(
+    `Auto-assign ${ranked.length} items evenly across ${tiers.length} tiers? This will overwrite existing tier assignments.`,
+    'Auto-Assign Tiers', 'Assign', false
+  );
+  if (!ok) return;
 
   if (!list.tierAssignments) list.tierAssignments = {};
   const perTier = Math.ceil(ranked.length / tiers.length);
@@ -3055,14 +3631,14 @@ async function updateTierColor(tierId, color) {
   const list = activeList();
   if (!list || !list.tiers) return;
   const t = list.tiers.find(t => t.id === tierId);
-  if (t) { t.color = color; await saveTiers(); }
+  if (t) { t.color = color; await saveTiers(); renderFieldsPanelTiers(); }
 }
 
 async function updateTierLabel(tierId, label) {
   const list = activeList();
   if (!list || !list.tiers) return;
   const t = list.tiers.find(t => t.id === tierId);
-  if (t) { t.label = label; await saveTiers(); }
+  if (t) { t.label = label; await saveTiers(); renderFieldsPanelTiers(); }
 }
 
 async function deleteTier(tierId) {
@@ -3070,13 +3646,13 @@ async function deleteTier(tierId) {
   if (!list) return;
   if (!list.tiers) list.tiers = DEFAULT_TIERS.map(t => ({...t}));
   list.tiers = list.tiers.filter(t => t.id !== tierId);
-  // Unassign items from deleted tier
   if (list.tierAssignments) {
     Object.keys(list.tierAssignments).forEach(itemId => {
       if (list.tierAssignments[itemId] === tierId) delete list.tierAssignments[itemId];
     });
   }
   await saveTiers();
+  renderFieldsPanelTiers();
   renderTierSettingsList();
   if (rankedView === 'tier') renderTierView();
 }
@@ -3162,8 +3738,9 @@ function saveGithubToken() {
   syncToGithub(true);
 }
 
-function clearGithubToken() {
-  if (!confirm('Remove GitHub token? Sync will be disabled.')) return;
+async function clearGithubToken() {
+  const ok = await showConfirm('Remove GitHub token? Sync will be disabled.', 'Clear Token', 'Remove', true);
+  if (!ok) return;
   localStorage.removeItem('ranklist_github_token');
   syncFileSha = null;
   setSyncStatus('', '⬤ Local');
@@ -3207,9 +3784,10 @@ async function loadFromGithub() {
     for (const item  of (content.items  || [])) await dbPut('items',  item);
     for (const entry of (content.ranked || [])) await dbPut('ranked', entry);
 
-    state.lists  = content.lists  || [];
-    state.items  = content.items  || [];
-    state.ranked = content.ranked || [];
+    state.lists        = content.lists  || [];
+    state.items        = content.items  || [];
+    state.ranked       = content.ranked || [];
+    state.customFields = content.customFields || [];
 
     if (state.lists.length === 0) {
       const defaultList = { id: uid(), name: 'Video Games', visibleFields: [...DEFAULT_VISIBLE] };
@@ -3248,11 +3826,12 @@ async function syncToGithub(immediate = false) {
 
   try {
     const payload = {
-      version: 1,
+      version: 2,
       savedAt: new Date().toISOString(),
-      lists:   state.lists,
-      items:   state.items,
-      ranked:  state.ranked,
+      lists:        state.lists,
+      items:        state.items,
+      ranked:       state.ranked,
+      customFields: state.customFields,
     };
 
     const content = btoa(unescape(encodeURIComponent(JSON.stringify(payload, null, 2))));
@@ -3294,16 +3873,40 @@ async function syncToGithub(immediate = false) {
 }
 
 // ══════════════════════════════════════════════
+//  CUSTOM CONFIRM
+// ══════════════════════════════════════════════
+
+let confirmResolve = null;
+
+function showConfirm(message, title = 'Are you sure?', okLabel = 'Confirm', danger = false) {
+  return new Promise(resolve => {
+    confirmResolve = resolve;
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMessage').textContent = message;
+    const okBtn = document.getElementById('confirmOkBtn');
+    okBtn.textContent = okLabel;
+    okBtn.className = danger ? 'btn danger' : 'btn primary';
+    openModal('modalConfirm');
+  });
+}
+
+function resolveConfirm(result) {
+  closeModal('modalConfirm');
+  if (confirmResolve) { confirmResolve(result); confirmResolve = null; }
+}
+
+// ══════════════════════════════════════════════
 //  BACKUP & RESTORE
 // ══════════════════════════════════════════════
 
 function backupData() {
   const backup = {
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
-    lists:  state.lists,
-    items:  state.items,
-    ranked: state.ranked,
+    lists:        state.lists,
+    items:        state.items,
+    ranked:       state.ranked,
+    customFields: state.customFields,
   };
 
   const json = JSON.stringify(backup, null, 2);
@@ -3370,10 +3973,12 @@ async function confirmRestore() {
   for (const list  of restoreData.lists)  await dbPut('lists',  list);
   for (const item  of restoreData.items)  await dbPut('items',  item);
   for (const entry of restoreData.ranked) await dbPut('ranked', entry);
+  for (const cf    of (restoreData.customFields || [])) await dbPut('customFields', cf);
 
-  state.lists  = restoreData.lists;
-  state.items  = restoreData.items;
-  state.ranked = restoreData.ranked;
+  state.lists        = restoreData.lists;
+  state.items        = restoreData.items;
+  state.ranked       = restoreData.ranked;
+  state.customFields = restoreData.customFields || [];
   state.activeListId = state.lists[0]?.id || null;
 
   closeModal('modalRestore');
